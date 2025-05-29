@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Éditeur AR - Gestionnaire de Projets</title>
+    <title>Éditeur AR</title>
     <style>
         * {
             margin: 0;
@@ -12,9 +12,9 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: sans-serif;
             background: #1a1a1a;
-            color: #ffffff;
+            color: #fff;
             overflow: hidden;
         }
 
@@ -347,7 +347,7 @@
         <h1>🌱 Éditeur AR</h1>
         <div class="header-actions">
             <button class="btn btn-primary" onclick="exportProject()">📤 Exporter</button>
-            <button class="btn btn-secondary" onclick="previewAR()">👁️ Aperçu AR</button>
+            <button class="btn btn-secondary" onclick="previewAR()">👁️ Aperçu</button>
         </div>
     </div>
 
@@ -357,7 +357,7 @@
         <div class="sidebar">
             <div class="sidebar-header">
                 <h3>Projets</h3>
-                <button class="btn btn-primary" style="width: 100%;" onclick="showNewProjectModal()">+ Nouveau Projet</button>
+                <button class="btn btn-primary" style="width: 100%;" onclick="showNewProjectModal()">+ Nouveau</button>
             </div>
             <div class="projects-list" id="projectsList">
                 <!-- Les projets seront ajoutés ici -->
@@ -370,18 +370,18 @@
             <div class="toolbar">
                 <div class="toolbar-group">
                     <span class="toolbar-label">Fichiers:</span>
-                    <input type="file" id="fileInput" accept=".glb,.gltf,.jpg,.jpeg,.png,.mp4,.mov" multiple style="display: none;" onchange="handleFileSelect(this.files)">
-                    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">📁 Charger Fichiers</button>
+                    <input type="file" id="fileInput" accept=".glb,.gltf,.jpg,.jpeg,.png,.mp4" multiple style="display: none;" onchange="handleFileSelect(this.files)">
+                    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">📁 Charger</button>
                 </div>
                 <div class="toolbar-group">
                     <span class="toolbar-label">Mode:</span>
-                    <button class="btn btn-secondary" id="translateBtn" onclick="setTransformMode('translate')">📍 Déplacer</button>
-                    <button class="btn btn-secondary" id="rotateBtn" onclick="setTransformMode('rotate')">🔄 Rotation</button>
-                    <button class="btn btn-secondary" id="scaleBtn" onclick="setTransformMode('scale')">📏 Échelle</button>
+                    <button class="btn btn-secondary" id="translateBtn" onclick="setTransformMode('translate')">📍 Move</button>
+                    <button class="btn btn-secondary" id="rotateBtn" onclick="setTransformMode('rotate')">🔄 Rotate</button>
+                    <button class="btn btn-secondary" id="scaleBtn" onclick="setTransformMode('scale')">📏 Scale</button>
                 </div>
                 <div class="toolbar-group">
-                    <button class="btn btn-secondary" onclick="deleteSelected()" id="deleteBtn" disabled>🗑️ Supprimer</button>
-                    <button class="btn btn-secondary" onclick="centerSelected()" id="centerBtn" disabled>🎯 Centrer</button>
+                    <button class="btn btn-secondary" onclick="deleteSelected()" id="deleteBtn" disabled>🗑️ Delete</button>
+                    <button class="btn btn-secondary" onclick="centerSelected()" id="centerBtn" disabled>🎯 Center</button>
                 </div>
             </div>
 
@@ -389,9 +389,9 @@
             <div class="viewport">
                 <div id="canvas-container">
                     <div class="drop-zone" id="dropZone">
-                        <div>📁 Glissez vos fichiers ici</div>
+                        <div>📁 Drop files here</div>
                         <div style="font-size: 12px; margin-top: 10px; color: #aaa;">
-                            Formats supportés: .glb, .jpg, .png, .mp4
+                            GLB, JPG, PNG, MP4
                         </div>
                     </div>
                 </div>
@@ -400,10 +400,10 @@
 
         <!-- PANNEAU PROPRIÉTÉS -->
         <div class="properties-panel">
-            <h3>Propriétés</h3>
+            <h3>Properties</h3>
             <div id="propertiesContent">
                 <p style="color: #aaa; text-align: center; margin-top: 50px;">
-                    Sélectionnez un objet pour voir ses propriétés
+                    Select an object
                 </p>
             </div>
         </div>
@@ -411,26 +411,26 @@
 
     <!-- STATUS BAR -->
     <div class="status-bar">
-        <div class="status-item">Objets: <span id="objectCount">0</span></div>
-        <div class="status-item">Projet: <span id="currentProject">Aucun</span></div>
-        <div class="status-item" id="statusMessage">Prêt</div>
+        <div class="status-item">Objects: <span id="objectCount">0</span></div>
+        <div class="status-item">Project: <span id="currentProject">None</span></div>
+        <div class="status-item" id="statusMessage">Ready</div>
     </div>
 
     <!-- MODAL NOUVEAU PROJET -->
     <div class="modal hidden" id="newProjectModal">
         <div class="modal-content">
-            <h3>Nouveau Projet</h3>
+            <h3>New Project</h3>
             <div class="form-group">
-                <label>Nom du projet:</label>
-                <input type="text" id="projectName" placeholder="Mon Projet AR">
+                <label>Name:</label>
+                <input type="text" id="projectName" placeholder="My AR Project">
             </div>
             <div class="form-group">
                 <label>Description:</label>
-                <input type="text" id="projectDescription" placeholder="Description du projet">
+                <input type="text" id="projectDescription" placeholder="Project description">
             </div>
             <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="hideNewProjectModal()">Annuler</button>
-                <button class="btn btn-primary" onclick="createProject()">Créer</button>
+                <button class="btn btn-secondary" onclick="hideNewProjectModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="createProject()">Create</button>
             </div>
         </div>
     </div>
@@ -569,13 +569,13 @@
             if (obj && obj.name !== 'ground') {
                 transformControls.attach(obj);
                 updatePropertiesPanel(obj);
-                updateStatus(`Objet sélectionné: ${obj.name || 'Sans nom'}`);
+                updateStatus(`Selected: ${obj.name || 'Unnamed'}`);
                 deleteBtn.disabled = false;
                 centerBtn.disabled = false;
             } else {
                 transformControls.detach();
                 clearPropertiesPanel();
-                updateStatus('Aucun objet sélectionné');
+                updateStatus('No selection');
                 deleteBtn.disabled = true;
                 centerBtn.disabled = true;
             }
@@ -586,40 +586,28 @@
             const container = document.getElementById('canvas-container');
 
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                container.addEventListener(eventName, preventDefaults);
+                container.addEventListener(eventName, e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
             });
 
             ['dragenter', 'dragover'].forEach(eventName => {
-                container.addEventListener(eventName, highlight);
+                container.addEventListener(eventName, () => dropZone.classList.add('active'));
             });
 
             ['dragleave', 'drop'].forEach(eventName => {
-                container.addEventListener(eventName, unhighlight);
+                container.addEventListener(eventName, () => dropZone.classList.remove('active'));
             });
 
-            container.addEventListener('drop', handleDrop);
-
-            function preventDefaults(e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-
-            function highlight() {
-                dropZone.classList.add('active');
-            }
-
-            function unhighlight() {
-                dropZone.classList.remove('active');
-            }
-
-            function handleDrop(e) {
+            container.addEventListener('drop', e => {
                 const files = Array.from(e.dataTransfer.files);
                 files.forEach(loadFile);
                 
                 if (objects.length > 0) {
                     dropZone.classList.add('hidden');
                 }
-            }
+            });
         }
 
         function loadFile(file) {
@@ -633,7 +621,7 @@
             } else if (fileType.startsWith('video/')) {
                 loadVideo(file);
             } else {
-                updateStatus(`Format non supporté: ${file.name}`);
+                updateStatus(`Unsupported: ${file.name}`);
             }
         }
 
@@ -677,15 +665,15 @@
                 scene.add(model);
                 objects.push(model);
                 updateObjectCount();
-                updateStatus(`Modèle 3D ajouté: ${file.name}`);
+                updateStatus(`Added: ${file.name}`);
                 
                 // Sélectionner automatiquement le nouveau modèle
                 selectObject(model);
                 
                 URL.revokeObjectURL(url);
             }, undefined, function(error) {
-                console.error('Erreur lors du chargement du modèle:', error);
-                updateStatus(`Erreur: ${file.name}`);
+                console.error('Error:', error);
+                updateStatus(`Error: ${file.name}`);
                 URL.revokeObjectURL(url);
             });
         }
@@ -708,7 +696,7 @@
                 scene.add(plane);
                 objects.push(plane);
                 updateObjectCount();
-                updateStatus(`Image ajoutée: ${file.name}`);
+                updateStatus(`Added: ${file.name}`);
                 
                 // Sélectionner automatiquement la nouvelle image
                 selectObject(plane);
@@ -742,7 +730,7 @@
             scene.add(plane);
             objects.push(plane);
             updateObjectCount();
-            updateStatus(`Vidéo ajoutée: ${file.name}`);
+            updateStatus(`Added: ${file.name}`);
             
             // Sélectionner automatiquement la nouvelle vidéo
             selectObject(plane);
@@ -750,7 +738,7 @@
 
         function setTransformMode(mode) {
             if (!selectedObject) {
-                updateStatus('Aucun objet sélectionné');
+                updateStatus('No selection');
                 return;
             }
             
@@ -773,7 +761,7 @@
                 objects = objects.filter(obj => obj !== selectedObject);
                 selectObject(null);
                 updateObjectCount();
-                updateStatus('Objet supprimé');
+                updateStatus('Deleted');
                 
                 if (objects.length === 0) {
                     document.getElementById('dropZone').classList.remove('hidden');
@@ -785,10 +773,10 @@
             const panel = document.getElementById('propertiesContent');
             panel.innerHTML = `
                 <div class="property-group">
-                    <h4>Général</h4>
+                    <h4>General</h4>
                     <div class="property-row">
-                        <span class="property-label">Nom:</span>
-                        <input class="property-input" value="${obj.name || 'Sans nom'}" onchange="updateObjectName(this.value)">
+                        <span class="property-label">Name:</span>
+                        <input class="property-input" value="${obj.name || 'Unnamed'}" onchange="updateObjectName(this.value)">
                     </div>
                 </div>
                 
@@ -825,7 +813,7 @@
                 </div>
                 
                 <div class="property-group">
-                    <h4>Échelle</h4>
+                    <h4>Scale</h4>
                     <div class="property-row">
                         <span class="property-label">X:</span>
                         <input class="property-input" type="number" step="0.1" value="${obj.scale.x.toFixed(2)}" onchange="updateObjectScale('x', this.value)">
@@ -840,14 +828,14 @@
                     </div>
                 </div>
                 
-                <button class="delete-btn" onclick="deleteSelected()">🗑️ Supprimer l'objet</button>
+                <button class="delete-btn" onclick="deleteSelected()">🗑️ Delete</button>
             `;
         }
 
         function clearPropertiesPanel() {
             document.getElementById('propertiesContent').innerHTML = `
                 <p style="color: #aaa; text-align: center; margin-top: 50px;">
-                    Sélectionnez un objet pour voir ses propriétés
+                    Select an object
                 </p>
             `;
         }
@@ -900,7 +888,7 @@
             const description = document.getElementById('projectDescription').value.trim();
             
             if (!name) {
-                alert('Veuillez entrer un nom de projet');
+                alert('Enter project name');
                 return;
             }
             
@@ -923,7 +911,7 @@
             loadProjects();
             loadProject(project);
             hideNewProjectModal();
-            updateStatus(`Projet créé: ${name}`);
+            updateStatus(`Created: ${name}`);
         }
 
         function loadProjects() {
@@ -938,7 +926,7 @@
                 item.innerHTML = `
                     <h4>${project.name}</h4>
                     <p>${project.description}</p>
-                    <p style="font-size: 10px; color: #666;">Créé: ${project.created}</p>
+                    <p style="font-size: 10px; color: #666;">${project.created}</p>
                 `;
                 
                 container.appendChild(item);
@@ -959,7 +947,7 @@
             clearScene();
             // TODO: Charger les objets sauvegardés
             
-            updateStatus(`Projet chargé: ${project.name}`);
+            updateStatus(`Loaded: ${project.name}`);
         }
 
         function clearScene() {
@@ -972,7 +960,7 @@
 
         function saveProject() {
             if (!currentProject) {
-                updateStatus('Aucun projet ouvert');
+                updateStatus('No project');
                 return;
             }
             
@@ -986,12 +974,12 @@
             }));
             
             localStorage.setItem('arProjects', JSON.stringify(projects));
-            updateStatus('Projet sauvegardé');
+            updateStatus('Saved');
         }
 
         function exportProject() {
             if (!currentProject) {
-                updateStatus('Aucun projet ouvert');
+                updateStatus('No project');
                 return;
             }
             
@@ -1005,17 +993,17 @@
             link.download = `${currentProject.name}.json`;
             link.click();
             
-            updateStatus('Projet exporté');
+            updateStatus('Exported');
         }
 
         function previewAR() {
             if (!currentProject || objects.length === 0) {
-                updateStatus('Aucun objet à prévisualiser');
+                updateStatus('Nothing to preview');
                 return;
             }
             
             saveProject();
-            updateStatus('Génération de l\'aperçu AR...');
+            updateStatus('Opening AR...');
             
             // TODO: Générer et ouvrir la version AR
             window.open('index.html', '_blank');
@@ -1065,7 +1053,7 @@
                 selectedObject.position.y = size.y / 2; // Poser sur le sol
                 
                 updatePropertiesPanel(selectedObject);
-                updateStatus('Objet centré sur la grille');
+                updateStatus('Centered');
             }
         }
     </script>
