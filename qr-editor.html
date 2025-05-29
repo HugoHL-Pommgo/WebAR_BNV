@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code - Éditeur AR</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            text-align: center;
+            padding: 50px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #2d2d2d;
+            padding: 40px;
+            border-radius: 10px;
+        }
+        
+        h1 {
+            color: #4CAF50;
+            margin-bottom: 30px;
+        }
+        
+        .qr-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #3d3d3d;
+            border-radius: 10px;
+        }
+        
+        .url {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 15px 0;
+            word-break: break-all;
+        }
+        
+        .btn {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌱 Éditeur AR - QR Code</h1>
+        
+        <div class="qr-section">
+            <h3>🖥️ Éditeur AR (Bureau)</h3>
+            <div class="url">https://192.168.1.38:8443/editor.html</div>
+            <canvas id="qr-editor" width="200" height="200"></canvas>
+            <br>
+            <a href="https://192.168.1.38:8443/editor.html" class="btn" target="_blank">
+                📝 Ouvrir l'Éditeur
+            </a>
+        </div>
+        
+        <div class="qr-section">
+            <h3>📱 Application AR (Mobile)</h3>
+            <div class="url">https://192.168.1.38:8443/index.html</div>
+            <canvas id="qr-app" width="200" height="200"></canvas>
+            <br>
+            <a href="https://192.168.1.38:8443/index.html" class="btn" target="_blank">
+                🌻 Ouvrir l'App AR
+            </a>
+        </div>
+        
+        <div class="qr-section">
+            <h3>🎯 Image Cible (Référence)</h3>
+            <div class="url">https://192.168.1.38:8443/flower-target.html</div>
+            <canvas id="qr-target" width="200" height="200"></canvas>
+            <br>
+            <a href="https://192.168.1.38:8443/flower-target.html" class="btn" target="_blank">
+                🌻 Voir Image Cible
+            </a>
+        </div>
+        
+        <p style="margin-top: 30px; color: #aaa;">
+            📝 <strong>Instructions :</strong><br>
+            1. Scannez le QR code avec votre téléphone<br>
+            2. Acceptez le certificat auto-signé<br>
+            3. Autorisez l'accès à la caméra<br>
+            4. Profitez de l'expérience AR !
+        </p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script>
+        // Générer les QR codes
+        QRCode.toCanvas(document.getElementById('qr-editor'), 'https://192.168.1.38:8443/editor.html', {
+            width: 200,
+            margin: 2,
+            color: {
+                dark: '#4CAF50',
+                light: '#FFFFFF'
+            }
+        });
+        
+        QRCode.toCanvas(document.getElementById('qr-app'), 'https://192.168.1.38:8443/index.html', {
+            width: 200,
+            margin: 2,
+            color: {
+                dark: '#4CAF50',
+                light: '#FFFFFF'
+            }
+        });
+        
+        QRCode.toCanvas(document.getElementById('qr-target'), 'https://192.168.1.38:8443/flower-target.html', {
+            width: 200,
+            margin: 2,
+            color: {
+                dark: '#4CAF50',
+                light: '#FFFFFF'
+            }
+        });
+    </script>
+</body>
+</html> 

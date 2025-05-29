@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Éditeur AR - Gestionnaire de Projets</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        /* HEADER */
+        .header {
+            height: 60px;
+            background: #2d2d2d;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            border-bottom: 2px solid #4CAF50;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            color: #4CAF50;
+        }
+
+        .header-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+        }
+
+        .btn-secondary {
+            background: #666;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #777;
+        }
+
+        .btn:disabled {
+            background: #444;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        /* LAYOUT PRINCIPAL */
+        .main-layout {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+
+        /* SIDEBAR PROJETS */
+        .sidebar {
+            width: 300px;
+            background: #2d2d2d;
+            border-right: 1px solid #555;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #555;
+        }
+
+        .sidebar-header h3 {
+            margin-bottom: 15px;
+            color: #4CAF50;
+        }
+
+        .projects-list {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        .project-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #3d3d3d;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+
+        .project-item:hover {
+            background: #4d4d4d;
+        }
+
+        .project-item.active {
+            border-left: 3px solid #4CAF50;
+            background: #4d4d4d;
+        }
+
+        .project-item h4 {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .project-item p {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        /* ZONE CENTRALE */
+        .center-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* TOOLBAR */
+        .toolbar {
+            height: 50px;
+            background: #333;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 15px;
+            border-bottom: 1px solid #555;
+        }
+
+        .toolbar-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .toolbar-label {
+            font-size: 12px;
+            color: #aaa;
+            margin-right: 5px;
+        }
+
+        /* VIEWPORT 3D */
+        .viewport {
+            flex: 1;
+            position: relative;
+            background: #1a1a1a;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .drop-zone {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 200px;
+            border: 2px dashed #4CAF50;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #4CAF50;
+            font-size: 16px;
+            text-align: center;
+            transition: all 0.3s;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .drop-zone.active {
+            background: rgba(76, 175, 80, 0.1);
+            border-color: #66BB6A;
+            opacity: 1;
+        }
+
+        .drop-zone.hidden {
+            display: none;
+        }
+
+        /* PANNEAU PROPRIÉTÉS */
+        .properties-panel {
+            width: 280px;
+            background: #2d2d2d;
+            border-left: 1px solid #555;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .properties-panel h3 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        .property-group {
+            margin-bottom: 25px;
+        }
+
+        .property-group h4 {
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #ccc;
+        }
+
+        .property-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .property-label {
+            width: 20px;
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .property-input {
+            flex: 1;
+            padding: 4px 8px;
+            background: #1a1a1a;
+            border: 1px solid #555;
+            border-radius: 3px;
+            color: white;
+            font-size: 12px;
+        }
+
+        .delete-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .delete-btn:hover {
+            background: #da190b;
+        }
+
+        /* MODAL */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #2d2d2d;
+            padding: 30px;
+            border-radius: 8px;
+            width: 400px;
+        }
+
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: #4CAF50;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ccc;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            background: #1a1a1a;
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: white;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* STATUS BAR */
+        .status-bar {
+            height: 25px;
+            background: #1a1a1a;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 12px;
+            color: #aaa;
+            border-top: 1px solid #555;
+        }
+
+        .status-item {
+            margin-right: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <div class="header">
+        <h1>🌱 Éditeur AR</h1>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="exportProject()">📤 Exporter</button>
+            <button class="btn btn-secondary" onclick="previewAR()">👁️ Aperçu AR</button>
+        </div>
+    </div>
+
+    <!-- LAYOUT PRINCIPAL -->
+    <div class="main-layout">
+        <!-- SIDEBAR PROJETS -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3>Projets</h3>
+                <button class="btn btn-primary" style="width: 100%;" onclick="showNewProjectModal()">+ Nouveau Projet</button>
+            </div>
+            <div class="projects-list" id="projectsList">
+                <!-- Les projets seront ajoutés ici -->
+            </div>
+        </div>
+
+        <!-- ZONE CENTRALE -->
+        <div class="center-area">
+            <!-- TOOLBAR -->
+            <div class="toolbar">
+                <div class="toolbar-group">
+                    <span class="toolbar-label">Fichiers:</span>
+                    <input type="file" id="fileInput" accept=".glb,.gltf,.jpg,.jpeg,.png,.mp4,.mov" multiple style="display: none;" onchange="handleFileSelect(this.files)">
+                    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">📁 Charger Fichiers</button>
+                </div>
+                <div class="toolbar-group">
+                    <span class="toolbar-label">Mode:</span>
+                    <button class="btn btn-secondary" id="translateBtn" onclick="setTransformMode('translate')">📍 Déplacer</button>
+                    <button class="btn btn-secondary" id="rotateBtn" onclick="setTransformMode('rotate')">🔄 Rotation</button>
+                    <button class="btn btn-secondary" id="scaleBtn" onclick="setTransformMode('scale')">📏 Échelle</button>
+                </div>
+                <div class="toolbar-group">
+                    <button class="btn btn-secondary" onclick="deleteSelected()" id="deleteBtn" disabled>🗑️ Supprimer</button>
+                    <button class="btn btn-secondary" onclick="centerSelected()" id="centerBtn" disabled>🎯 Centrer</button>
+                </div>
+            </div>
+
+            <!-- VIEWPORT 3D -->
+            <div class="viewport">
+                <div id="canvas-container">
+                    <div class="drop-zone" id="dropZone">
+                        <div>📁 Glissez vos fichiers ici</div>
+                        <div style="font-size: 12px; margin-top: 10px; color: #aaa;">
+                            Formats supportés: .glb, .jpg, .png, .mp4
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANNEAU PROPRIÉTÉS -->
+        <div class="properties-panel">
+            <h3>Propriétés</h3>
+            <div id="propertiesContent">
+                <p style="color: #aaa; text-align: center; margin-top: 50px;">
+                    Sélectionnez un objet pour voir ses propriétés
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATUS BAR -->
+    <div class="status-bar">
+        <div class="status-item">Objets: <span id="objectCount">0</span></div>
+        <div class="status-item">Projet: <span id="currentProject">Aucun</span></div>
+        <div class="status-item" id="statusMessage">Prêt</div>
+    </div>
+
+    <!-- MODAL NOUVEAU PROJET -->
+    <div class="modal hidden" id="newProjectModal">
+        <div class="modal-content">
+            <h3>Nouveau Projet</h3>
+            <div class="form-group">
+                <label>Nom du projet:</label>
+                <input type="text" id="projectName" placeholder="Mon Projet AR">
+            </div>
+            <div class="form-group">
+                <label>Description:</label>
+                <input type="text" id="projectDescription" placeholder="Description du projet">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="hideNewProjectModal()">Annuler</button>
+                <button class="btn btn-primary" onclick="createProject()">Créer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+    <script>
+        // Variables globales
+        let scene, camera, renderer, controls, transformControls;
+        let selectedObject = null;
+        let objects = [];
+        let currentProject = null;
+        let projects = JSON.parse(localStorage.getItem('arProjects')) || [];
+
+        // Initialisation
+        init();
+        loadProjects();
+
+        function init() {
+            // Scène
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x222222);
+
+            // Caméra
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(5, 5, 5);
+            camera.lookAt(0, 0, 0);
+
+            // Renderer
+            const container = document.getElementById('canvas-container');
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            container.appendChild(renderer.domElement);
+
+            // Contrôles orbital
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.target.set(0, 0, 0);
+
+            // Contrôles de transformation
+            transformControls = new THREE.TransformControls(camera, renderer.domElement);
+            transformControls.addEventListener('change', render);
+            transformControls.addEventListener('objectChange', function() {
+                if (selectedObject) {
+                    updatePropertiesPanel(selectedObject);
+                }
+            });
+            transformControls.addEventListener('dragging-changed', function(event) {
+                controls.enabled = !event.value;
+            });
+            scene.add(transformControls);
+
+            // Éclairage amélioré
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 10, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
+
+            // Lumière de remplissage
+            const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            fillLight.position.set(-5, 3, -5);
+            scene.add(fillLight);
+
+            // Grille équilibrée
+            const gridHelper = new THREE.GridHelper(10, 10, 0x888888, 0x444444);
+            scene.add(gridHelper);
+
+            // Plan de sol invisible pour raycasting
+            const planeGeometry = new THREE.PlaneGeometry(100, 100);
+            const planeMaterial = new THREE.MeshBasicMaterial({ visible: false });
+            const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+            plane.rotation.x = -Math.PI / 2;
+            plane.name = 'ground';
+            scene.add(plane);
+
+            // Gestion des clics
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+
+            renderer.domElement.addEventListener('click', onMouseClick);
+            window.addEventListener('resize', onWindowResize);
+
+            // Drag & Drop
+            setupDragAndDrop();
+
+            // Boucle de rendu
+            animate();
+        }
+
+        function onMouseClick(event) {
+            // Ignorer si on est en train de manipuler avec les transform controls
+            if (transformControls.dragging) return;
+            
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            
+            // Filtrer uniquement les objets manipulables (exclure le plan de sol)
+            const intersectableObjects = objects.filter(obj => obj.name !== 'ground');
+            const intersects = raycaster.intersectObjects(intersectableObjects, true);
+
+            if (intersects.length > 0) {
+                // Trouver l'objet parent le plus proche dans notre liste
+                let targetObject = intersects[0].object;
+                while (targetObject.parent && !objects.includes(targetObject)) {
+                    targetObject = targetObject.parent;
+                }
+                selectObject(targetObject);
+            } else {
+                selectObject(null);
+            }
+        }
+
+        function selectObject(obj) {
+            selectedObject = obj;
+            
+            // Mettre à jour l'état des boutons
+            const deleteBtn = document.getElementById('deleteBtn');
+            const centerBtn = document.getElementById('centerBtn');
+            
+            if (obj && obj.name !== 'ground') {
+                transformControls.attach(obj);
+                updatePropertiesPanel(obj);
+                updateStatus(`Objet sélectionné: ${obj.name || 'Sans nom'}`);
+                deleteBtn.disabled = false;
+                centerBtn.disabled = false;
+            } else {
+                transformControls.detach();
+                clearPropertiesPanel();
+                updateStatus('Aucun objet sélectionné');
+                deleteBtn.disabled = true;
+                centerBtn.disabled = true;
+            }
+        }
+
+        function setupDragAndDrop() {
+            const dropZone = document.getElementById('dropZone');
+            const container = document.getElementById('canvas-container');
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                container.addEventListener(eventName, preventDefaults);
+            });
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                container.addEventListener(eventName, highlight);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                container.addEventListener(eventName, unhighlight);
+            });
+
+            container.addEventListener('drop', handleDrop);
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            function highlight() {
+                dropZone.classList.add('active');
+            }
+
+            function unhighlight() {
+                dropZone.classList.remove('active');
+            }
+
+            function handleDrop(e) {
+                const files = Array.from(e.dataTransfer.files);
+                files.forEach(loadFile);
+                
+                if (objects.length > 0) {
+                    dropZone.classList.add('hidden');
+                }
+            }
+        }
+
+        function loadFile(file) {
+            const fileType = file.type;
+            const fileName = file.name.toLowerCase();
+
+            if (fileName.endsWith('.glb') || fileName.endsWith('.gltf')) {
+                loadGLTF(file);
+            } else if (fileType.startsWith('image/')) {
+                loadImage(file);
+            } else if (fileType.startsWith('video/')) {
+                loadVideo(file);
+            } else {
+                updateStatus(`Format non supporté: ${file.name}`);
+            }
+        }
+
+        function loadGLTF(file) {
+            const loader = new THREE.GLTFLoader();
+            const url = URL.createObjectURL(file);
+            
+            loader.load(url, function(gltf) {
+                const model = gltf.scene;
+                model.name = file.name;
+                
+                // Calculer la boîte englobante
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                
+                // Centrer le modèle à l'origine
+                model.position.sub(center);
+                
+                // Redimensionner intelligemment
+                const maxSize = Math.max(size.x, size.y, size.z);
+                let scale = 2;
+                if (maxSize > 0) {
+                    scale = Math.min(3, 2 / maxSize); // Limite entre 0.1 et 3
+                }
+                model.scale.setScalar(scale);
+                
+                // Positionner sur la grille (y = 0 pour poser sur le sol)
+                const scaledBox = new THREE.Box3().setFromObject(model);
+                const scaledSize = scaledBox.getSize(new THREE.Vector3());
+                model.position.y = scaledSize.y / 2; // Poser sur le sol
+                
+                // Activer les ombres pour les meshes
+                model.traverse(function(child) {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+                
+                scene.add(model);
+                objects.push(model);
+                updateObjectCount();
+                updateStatus(`Modèle 3D ajouté: ${file.name}`);
+                
+                // Sélectionner automatiquement le nouveau modèle
+                selectObject(model);
+                
+                URL.revokeObjectURL(url);
+            }, undefined, function(error) {
+                console.error('Erreur lors du chargement du modèle:', error);
+                updateStatus(`Erreur: ${file.name}`);
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        function loadImage(file) {
+            const loader = new THREE.TextureLoader();
+            const url = URL.createObjectURL(file);
+            
+            loader.load(url, function(texture) {
+                const geometry = new THREE.PlaneGeometry(2, 2);
+                const material = new THREE.MeshBasicMaterial({ 
+                    map: texture,
+                    transparent: true,
+                    side: THREE.DoubleSide
+                });
+                const plane = new THREE.Mesh(geometry, material);
+                plane.name = file.name;
+                plane.position.y = 1; // Élever au-dessus du sol
+                
+                scene.add(plane);
+                objects.push(plane);
+                updateObjectCount();
+                updateStatus(`Image ajoutée: ${file.name}`);
+                
+                // Sélectionner automatiquement la nouvelle image
+                selectObject(plane);
+                
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        function loadVideo(file) {
+            const video = document.createElement('video');
+            video.src = URL.createObjectURL(file);
+            video.loop = true;
+            video.muted = true;
+            video.crossOrigin = 'anonymous';
+            video.play();
+            
+            const texture = new THREE.VideoTexture(video);
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.format = THREE.RGBFormat;
+            
+            const geometry = new THREE.PlaneGeometry(2, 2);
+            const material = new THREE.MeshBasicMaterial({ 
+                map: texture,
+                side: THREE.DoubleSide
+            });
+            const plane = new THREE.Mesh(geometry, material);
+            plane.name = file.name;
+            plane.position.y = 1; // Élever au-dessus du sol
+            
+            scene.add(plane);
+            objects.push(plane);
+            updateObjectCount();
+            updateStatus(`Vidéo ajoutée: ${file.name}`);
+            
+            // Sélectionner automatiquement la nouvelle vidéo
+            selectObject(plane);
+        }
+
+        function setTransformMode(mode) {
+            if (!selectedObject) {
+                updateStatus('Aucun objet sélectionné');
+                return;
+            }
+            
+            transformControls.setMode(mode);
+            updateStatus(`Mode: ${mode}`);
+            
+            // Mettre à jour l'apparence des boutons
+            document.querySelectorAll('#translateBtn, #rotateBtn, #scaleBtn').forEach(btn => {
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-secondary');
+            });
+            
+            document.getElementById(mode + 'Btn').classList.remove('btn-secondary');
+            document.getElementById(mode + 'Btn').classList.add('btn-primary');
+        }
+
+        function deleteSelected() {
+            if (selectedObject) {
+                scene.remove(selectedObject);
+                objects = objects.filter(obj => obj !== selectedObject);
+                selectObject(null);
+                updateObjectCount();
+                updateStatus('Objet supprimé');
+                
+                if (objects.length === 0) {
+                    document.getElementById('dropZone').classList.remove('hidden');
+                }
+            }
+        }
+
+        function updatePropertiesPanel(obj) {
+            const panel = document.getElementById('propertiesContent');
+            panel.innerHTML = `
+                <div class="property-group">
+                    <h4>Général</h4>
+                    <div class="property-row">
+                        <span class="property-label">Nom:</span>
+                        <input class="property-input" value="${obj.name || 'Sans nom'}" onchange="updateObjectName(this.value)">
+                    </div>
+                </div>
+                
+                <div class="property-group">
+                    <h4>Position</h4>
+                    <div class="property-row">
+                        <span class="property-label">X:</span>
+                        <input class="property-input" type="number" step="0.1" value="${obj.position.x.toFixed(2)}" onchange="updateObjectPosition('x', this.value)">
+                    </div>
+                    <div class="property-row">
+                        <span class="property-label">Y:</span>
+                        <input class="property-input" type="number" step="0.1" value="${obj.position.y.toFixed(2)}" onchange="updateObjectPosition('y', this.value)">
+                    </div>
+                    <div class="property-row">
+                        <span class="property-label">Z:</span>
+                        <input class="property-input" type="number" step="0.1" value="${obj.position.z.toFixed(2)}" onchange="updateObjectPosition('z', this.value)">
+                    </div>
+                </div>
+                
+                <div class="property-group">
+                    <h4>Rotation</h4>
+                    <div class="property-row">
+                        <span class="property-label">X:</span>
+                        <input class="property-input" type="number" step="0.1" value="${(obj.rotation.x * 180 / Math.PI).toFixed(1)}" onchange="updateObjectRotation('x', this.value)">
+                    </div>
+                    <div class="property-row">
+                        <span class="property-label">Y:</span>
+                        <input class="property-input" type="number" step="0.1" value="${(obj.rotation.y * 180 / Math.PI).toFixed(1)}" onchange="updateObjectRotation('y', this.value)">
+                    </div>
+                    <div class="property-row">
+                        <span class="property-label">Z:</span>
+                        <input class="property-input" type="number" step="0.1" value="${(obj.rotation.z * 180 / Math.PI).toFixed(1)}" onchange="updateObjectRotation('z', this.value)">
+                    </div>
+                </div>
+                
+                <div class="property-group">
+                    <h4>Échelle</h4>
+                    <div class="property-row">
+                        <span class="property-label">X:</span>
+                        <input class="property-input" type="number" step="0.1" value="${obj.scale.x.toFixed(2)}" onchange="updateObjectScale('x', this.value)">
+                    </div>
+                    <div class="property-row">
+                        <span class="property-label">Y:</span>
+                        <input class="property-input" type="number" step="0.1" value="${obj.scale.y.toFixed(2)}" onchange="updateObjectScale('y', this.value)">
+                    </div>
+                    <div class="property-row">
+                        <span class="property-label">Z:</span>
+                        <input class="property-input" type="number" step="0.1" value="${obj.scale.z.toFixed(2)}" onchange="updateObjectScale('z', this.value)">
+                    </div>
+                </div>
+                
+                <button class="delete-btn" onclick="deleteSelected()">🗑️ Supprimer l'objet</button>
+            `;
+        }
+
+        function clearPropertiesPanel() {
+            document.getElementById('propertiesContent').innerHTML = `
+                <p style="color: #aaa; text-align: center; margin-top: 50px;">
+                    Sélectionnez un objet pour voir ses propriétés
+                </p>
+            `;
+        }
+
+        function updateObjectName(name) {
+            if (selectedObject) {
+                selectedObject.name = name;
+            }
+        }
+
+        function updateObjectPosition(axis, value) {
+            if (selectedObject) {
+                selectedObject.position[axis] = parseFloat(value);
+            }
+        }
+
+        function updateObjectRotation(axis, value) {
+            if (selectedObject) {
+                selectedObject.rotation[axis] = parseFloat(value) * Math.PI / 180;
+            }
+        }
+
+        function updateObjectScale(axis, value) {
+            if (selectedObject) {
+                selectedObject.scale[axis] = parseFloat(value);
+            }
+        }
+
+        function updateObjectCount() {
+            document.getElementById('objectCount').textContent = objects.length;
+        }
+
+        function updateStatus(message) {
+            document.getElementById('statusMessage').textContent = message;
+        }
+
+        // Gestion des projets
+        function showNewProjectModal() {
+            document.getElementById('newProjectModal').classList.remove('hidden');
+        }
+
+        function hideNewProjectModal() {
+            document.getElementById('newProjectModal').classList.add('hidden');
+            document.getElementById('projectName').value = '';
+            document.getElementById('projectDescription').value = '';
+        }
+
+        function createProject() {
+            const name = document.getElementById('projectName').value.trim();
+            const description = document.getElementById('projectDescription').value.trim();
+            
+            if (!name) {
+                alert('Veuillez entrer un nom de projet');
+                return;
+            }
+            
+            const project = {
+                id: Date.now().toString(),
+                name: name,
+                description: description,
+                created: new Date().toLocaleDateString(),
+                scene: {
+                    objects: [],
+                    camera: {
+                        position: { x: 0, y: 5, z: 10 }
+                    }
+                }
+            };
+            
+            projects.push(project);
+            localStorage.setItem('arProjects', JSON.stringify(projects));
+            
+            loadProjects();
+            loadProject(project);
+            hideNewProjectModal();
+            updateStatus(`Projet créé: ${name}`);
+        }
+
+        function loadProjects() {
+            const container = document.getElementById('projectsList');
+            container.innerHTML = '';
+            
+            projects.forEach(project => {
+                const item = document.createElement('div');
+                item.className = 'project-item';
+                item.onclick = () => loadProject(project);
+                
+                item.innerHTML = `
+                    <h4>${project.name}</h4>
+                    <p>${project.description}</p>
+                    <p style="font-size: 10px; color: #666;">Créé: ${project.created}</p>
+                `;
+                
+                container.appendChild(item);
+            });
+        }
+
+        function loadProject(project) {
+            currentProject = project;
+            document.getElementById('currentProject').textContent = project.name;
+            
+            // Marquer comme actif
+            document.querySelectorAll('.project-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.closest('.project-item')?.classList.add('active');
+            
+            // Charger la scène du projet
+            clearScene();
+            // TODO: Charger les objets sauvegardés
+            
+            updateStatus(`Projet chargé: ${project.name}`);
+        }
+
+        function clearScene() {
+            objects.forEach(obj => scene.remove(obj));
+            objects = [];
+            selectObject(null);
+            updateObjectCount();
+            document.getElementById('dropZone').classList.remove('hidden');
+        }
+
+        function saveProject() {
+            if (!currentProject) {
+                updateStatus('Aucun projet ouvert');
+                return;
+            }
+            
+            currentProject.scene.objects = objects.map(obj => ({
+                name: obj.name,
+                type: obj.type,
+                position: obj.position,
+                rotation: obj.rotation,
+                scale: obj.scale
+                // TODO: Sauvegarder les données des médias
+            }));
+            
+            localStorage.setItem('arProjects', JSON.stringify(projects));
+            updateStatus('Projet sauvegardé');
+        }
+
+        function exportProject() {
+            if (!currentProject) {
+                updateStatus('Aucun projet ouvert');
+                return;
+            }
+            
+            saveProject();
+            
+            const dataStr = JSON.stringify(currentProject, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `${currentProject.name}.json`;
+            link.click();
+            
+            updateStatus('Projet exporté');
+        }
+
+        function previewAR() {
+            if (!currentProject || objects.length === 0) {
+                updateStatus('Aucun objet à prévisualiser');
+                return;
+            }
+            
+            saveProject();
+            updateStatus('Génération de l\'aperçu AR...');
+            
+            // TODO: Générer et ouvrir la version AR
+            window.open('index.html', '_blank');
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('canvas-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            render();
+        }
+
+        function render() {
+            renderer.render(scene, camera);
+        }
+
+        // Sauvegarde automatique toutes les 30 secondes
+        setInterval(() => {
+            if (currentProject && objects.length > 0) {
+                saveProject();
+            }
+        }, 30000);
+
+        // Nouvelle fonction pour gérer la sélection de fichiers via le bouton
+        function handleFileSelect(files) {
+            Array.from(files).forEach(loadFile);
+            
+            if (objects.length > 0) {
+                document.getElementById('dropZone').classList.add('hidden');
+            }
+        }
+
+        function centerSelected() {
+            if (selectedObject) {
+                // Centrer l'objet à l'origine (0, 0, 0) mais garder Y pour qu'il reste sur le sol
+                const box = new THREE.Box3().setFromObject(selectedObject);
+                const size = box.getSize(new THREE.Vector3());
+                
+                selectedObject.position.x = 0;
+                selectedObject.position.z = 0;
+                selectedObject.position.y = size.y / 2; // Poser sur le sol
+                
+                updatePropertiesPanel(selectedObject);
+                updateStatus('Objet centré sur la grille');
+            }
+        }
+    </script>
+</body>
+</html> 
