@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WebAR - Plante 3D</title>
+  
+  <!-- AR.js - Configuration pour détection plein écran -->
+  <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    
+    #startButton {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 20px 40px;
+      font-size: 24px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      z-index: 999;
+    }
+    
+    #instructions {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 15px 25px;
+      border-radius: 10px;
+      text-align: center;
+      z-index: 998;
+      font-size: 16px;
+    }
+    
+    #detectionZone {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 180px;
+      height: 180px;
+      border: 2px solid rgba(76, 175, 80, 0.6);
+      border-radius: 15px;
+      z-index: 997;
+      pointer-events: none;
+      animation: guideAnimation 3s infinite;
+    }
+    
+    #detectionZone::before {
+      content: "";
+      position: absolute;
+      top: -8px;
+      left: -8px;
+      right: -8px;
+      bottom: -8px;
+      border: 1px dashed rgba(76, 175, 80, 0.3);
+      border-radius: 20px;
+    }
+    
+    #detectionZone::after {
+      content: "💡 Zone suggérée (détection partout)";
+      position: absolute;
+      top: -35px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(76, 175, 80, 0.8);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    
+    @keyframes guideAnimation {
+      0% { 
+        opacity: 0.6;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      50% { 
+        opacity: 0.8;
+        transform: translate(-50%, -50%) scale(1.05);
+      }
+      100% { 
+        opacity: 0.6;
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+    
+    #fullDetectionArea {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border: 3px solid rgba(76, 175, 80, 0.2);
+      z-index: 996;
+      pointer-events: none;
+      animation: fullAreaPulse 4s infinite;
+    }
+    
+    @keyframes fullAreaPulse {
+      0%, 100% { border-color: rgba(76, 175, 80, 0.2); }
+      50% { border-color: rgba(76, 175, 80, 0.4); }
+    }
+    
+    #debugInfo {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      z-index: 995;
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+    
+    .detected {
+      border-color: #FF9800 !important;
+      animation: detectedGlow 1s infinite alternate !important;
+    }
+    
+    .detected::after {
+      content: "✅ Marqueur détecté!" !important;
+      background: rgba(255, 152, 0, 0.9) !important;
+    }
+    
+    @keyframes detectedGlow {
+      0% { box-shadow: 0 0 10px rgba(255, 152, 0, 0.6); }
+      100% { box-shadow: 0 0 20px rgba(255, 152, 0, 0.9); }
+    }
+    
+    .full-detection {
+      border-color: rgba(255, 152, 0, 0.6) !important;
+      animation: none !important;
+    }
+  </style>
+</head>
+<body>
+  <button id="startButton" onclick="startAR()">🚀 Démarrer AR</button>
+  
+  <div id="instructions" class="hidden">
+    📱 Pointez le marqueur n'importe où dans l'écran<br>
+    Le cadre vert est juste un guide • Distance: 20-50cm<br>
+    <a href="marker.html" style="color: #4CAF50; text-decoration: underline;">📄 Télécharger le marqueur</a>
+  </div>
+
+  <div id="detectionZone" class="hidden"></div>
+  <div id="fullDetectionArea" class="hidden"></div>
+
+  <div id="debugInfo" class="hidden">
+    Status: Initialisation...<br>
+    Zone: Plein écran
+  </div>
+
+  <a-scene 
+    id="arScene"
+    class="hidden"
+    embedded
+    arjs="sourceType: webcam; 
+          debugUIEnabled: false; 
+          detectionMode: mono_and_matrix; 
+          matrixCodeType: 3x3;
+          maxDetectionRate: 60;
+          canvasWidth: 800;
+          canvasHeight: 600;
+          trackingMethod: best;
+          sourceWidth: 800;
+          sourceHeight: 600;
+          displayWidth: 800;
+          displayHeight: 600;"
+    renderer="logarithmicDepthBuffer: true; colorManagement: true; antialias: true;"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+    
+    <!-- Caméra AR avec vue complète -->
+    <a-camera 
+      rotation-reader
+      look-controls-enabled="false"
+      arjs-look-controls="smoothingFactor: 0.1;">
+    </a-camera>
+    
+    <!-- Assets avec chemins GitHub Pages -->
+    <a-assets>
+      <a-asset-item id="plantModel" src="./assets/topfpflanze_final.glb"></a-asset-item>
+    </a-assets>
+    
+    <!-- Éclairage optimisé -->
+    <a-light type="ambient" color="#ffffff" intensity="0.7"></a-light>
+    <a-light type="directional" position="1 1 1" color="#ffffff" intensity="1.0"></a-light>
+    <a-light type="point" position="0 1 0" color="#ffffff" intensity="0.5"></a-light>
+    
+    <!-- Marqueur avec détection plein écran -->
+    <a-marker 
+      preset="hiro"
+      id="hiroMarker"
+      smooth="true"
+      smoothCount="3"
+      smoothTolerance="0.02"
+      smoothThreshold="3"
+      emitevents="true"
+      size="1">
+      
+      <a-gltf-model
+        id="plantModel3D"
+        src="#plantModel"
+        position="0 0 0"
+        rotation="-90 0 0"
+        scale="0.25 0.25 0.25"
+        visible="true">
+      </a-gltf-model>
+      
+      <!-- Indicateur de détection -->
+      <a-ring
+        position="0 0.02 0"
+        rotation="-90 0 0"
+        radius-inner="0.6"
+        radius-outer="0.8"
+        color="#4CAF50"
+        opacity="0.4"
+        id="detectionRing"
+        animation="property: rotation; to: -90 360 0; loop: true; dur: 4000; easing: linear">
+      </a-ring>
+      
+      <!-- Effet de particules -->
+      <a-sphere
+        position="0 1 0"
+        radius="0.05"
+        color="#4CAF50"
+        opacity="0.8"
+        animation="property: position; to: 0 2 0; loop: true; dur: 2000; dir: alternate; easing: easeInOutSine">
+      </a-sphere>
+    </a-marker>
+    
+  </a-scene>
+
+  <script>
+    let marker;
+    let debugInfo;
+    let detectionZone;
+    let fullDetectionArea;
+    let markerFound = false;
+    let lastDetectionTime = 0;
+    let cameraPermissionGranted = false;
+
+    async function checkCameraPermission() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        cameraPermissionGranted = true;
+        console.log('✅ Permission caméra accordée');
+        stream.getTracks().forEach(track => track.stop()); // Arrêter le stream de test
+        return true;
+      } catch (error) {
+        console.error('❌ Erreur permission caméra:', error);
+        debugInfo.innerHTML = 'Status: ❌ Accès caméra refusé<br>Cliquez sur 🔒 pour autoriser';
+        debugInfo.style.background = 'rgba(244, 67, 54, 0.8)';
+        return false;
+      }
+    }
+
+    async function startAR() {
+      document.getElementById('startButton').classList.add('hidden');
+      document.getElementById('debugInfo').classList.remove('hidden');
+      
+      debugInfo = document.querySelector('#debugInfo');
+      debugInfo.innerHTML = 'Status: 🔍 Vérification caméra...<br>Zone: Initialisation';
+      
+      // Vérifier l'accès caméra d'abord
+      const hasCamera = await checkCameraPermission();
+      
+      if (!hasCamera) {
+        // Afficher des instructions pour autoriser la caméra
+        debugInfo.innerHTML = 'Status: ⚠️ Caméra requise<br>💡 Autorisez dans les paramètres';
+        return;
+      }
+      
+      // Si caméra OK, démarrer l'AR
+      document.getElementById('arScene').classList.remove('hidden');
+      document.getElementById('instructions').classList.remove('hidden');
+      document.getElementById('detectionZone').classList.remove('hidden');
+      document.getElementById('fullDetectionArea').classList.remove('hidden');
+      
+      debugInfo.innerHTML = 'Status: 🚀 Démarrage AR...<br>Zone: Plein écran';
+      
+      // Attendre un peu que A-Frame se charge
+      setTimeout(() => {
+        try {
+          document.querySelector('a-scene').play();
+          setupFullScreenDetection();
+        } catch (error) {
+          console.error('Erreur démarrage AR:', error);
+          debugInfo.innerHTML = 'Status: ❌ Erreur AR<br>Rechargez la page';
+        }
+      }, 1000);
+    }
+
+    function setupFullScreenDetection() {
+      marker = document.querySelector('#hiroMarker');
+      detectionZone = document.querySelector('#detectionZone');
+      fullDetectionArea = document.querySelector('#fullDetectionArea');
+      
+      debugInfo.innerHTML = 'Status: 🔍 Recherche marqueur...<br>Zone: Plein écran actif';
+      
+      if (marker) {
+        // Événements de détection plein écran
+        marker.addEventListener('markerFound', function() {
+          console.log('🎯 Marqueur détecté! (zone complète)');
+          markerFound = true;
+          lastDetectionTime = Date.now();
+          
+          // Mise à jour visuelle complète
+          detectionZone.classList.add('detected');
+          fullDetectionArea.classList.add('full-detection');
+          debugInfo.innerHTML = 'Status: ✅ DÉTECTÉ!<br>Zone: Plein écran actif';
+          debugInfo.style.background = 'rgba(76, 175, 80, 0.8)';
+          
+          // Feedback tactile sur mobile
+          if (navigator.vibrate) {
+            navigator.vibrate([100, 50, 100, 50, 200]);
+          }
+        });
+
+        marker.addEventListener('markerLost', function() {
+          console.log('❌ Marqueur perdu');
+          markerFound = false;
+          
+          // Retour visuel normal
+          detectionZone.classList.remove('detected');
+          fullDetectionArea.classList.remove('full-detection');
+          debugInfo.innerHTML = 'Status: 🔍 Recherche...<br>Zone: Plein écran';
+          debugInfo.style.background = 'rgba(0,0,0,0.8)';
+        });
+      }
+      
+      // Mise à jour dynamique du statut
+      setInterval(() => {
+        if (!markerFound && cameraPermissionGranted) {
+          const currentTime = Date.now();
+          const timeSinceLastDetection = currentTime - lastDetectionTime;
+          
+          const tips = [
+            'Status: 🔍 Recherche active...<br>💡 Montrez le marqueur partout',
+            'Status: 🔍 Scanning...<br>💡 Améliorez l\'éclairage',
+            'Status: 🔍 Détection active...<br>💡 Bougez lentement',
+            'Status: 🔍 Recherche...<br>💡 Tenez le marqueur stable'
+          ];
+          
+          let tipIndex = Math.floor(Date.now() / 3000) % tips.length;
+          debugInfo.innerHTML = tips[tipIndex];
+          
+          // Encouragement si pas de détection depuis longtemps
+          if (timeSinceLastDetection > 10000 && lastDetectionTime > 0) {
+            debugInfo.innerHTML = 'Status: 💪 Continuez!<br>💡 Le marqueur sera détecté';
+            debugInfo.style.background = 'rgba(255, 193, 7, 0.8)';
+          }
+        }
+      }, 2000);
+      
+      // Animation du guide visuel
+      setInterval(() => {
+        if (!markerFound) {
+          detectionZone.style.transform = 'translate(-50%, -50%) scale(' + (0.95 + Math.sin(Date.now() / 1000) * 0.1) + ')';
+        }
+      }, 100);
+    }
+
+    // Optimisations spécifiques mobile
+    if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+      console.log('📱 Mobile détecté - détection plein écran optimisée');
+      
+      // Prévenir le zoom sur mobile
+      document.addEventListener('touchstart', function(e) {
+        if (e.touches.length > 1) {
+          e.preventDefault();
+        }
+      });
+      
+      // Empêcher le scroll
+      document.addEventListener('touchmove', function(e) {
+        e.preventDefault();
+      }, { passive: false });
+    }
+
+    // Gestion des erreurs avec redémarrage automatique
+    window.addEventListener('error', function(e) {
+      console.error('Erreur AR:', e.error);
+      if (debugInfo) {
+        debugInfo.innerHTML = 'Status: ⚠️ Erreur détectée<br>🔄 Rechargez la page';
+        debugInfo.style.background = 'rgba(244, 67, 54, 0.8)';
+      }
+    });
+
+    // Log pour debug
+    console.log('🌱 WebAR Plant Project - Version GitHub Pages');
+    console.log('📱 URL:', window.location.href);
+    console.log('🔒 HTTPS:', window.location.protocol === 'https:');
+  </script>
+</body>
+</html>

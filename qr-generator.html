@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur QR Code WebAR</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        input[type="url"], input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        input[type="url"]:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        .color-picker {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        input[type="color"] {
+            width: 50px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        .qr-result {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+        
+        #qrcode {
+            margin: 20px 0;
+        }
+        
+        .download-btn {
+            background: #2196F3;
+            margin: 5px;
+            width: auto;
+            display: inline-block;
+        }
+        
+        .download-btn:hover {
+            background: #1976D2;
+        }
+        
+        .preview {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .size-option {
+            text-align: center;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .size-option:hover, .size-option.active {
+            border-color: #4CAF50;
+            background: #f0f8f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌱 Générateur QR Code WebAR</h1>
+        
+        <div class="input-group">
+            <label for="webUrl">URL de votre application WebAR :</label>
+            <input type="url" id="webUrl" placeholder="https://votre-username.github.io/votre-repo/" 
+                   value="https://192.168.1.38:8443">
+        </div>
+        
+        <div class="input-group">
+            <label for="qrText">Texte personnalisé (optionnel) :</label>
+            <input type="text" id="qrText" placeholder="Scannez pour voir la plante en AR !">
+        </div>
+        
+        <div class="input-group">
+            <label>Couleurs du QR Code :</label>
+            <div class="color-picker">
+                <label for="fgColor">Couleur principale :</label>
+                <input type="color" id="fgColor" value="#000000">
+                
+                <label for="bgColor">Couleur de fond :</label>
+                <input type="color" id="bgColor" value="#ffffff">
+            </div>
+        </div>
+        
+        <div class="input-group">
+            <label>Taille :</label>
+            <div class="preview">
+                <div class="size-option active" onclick="selectSize(128)">
+                    <div>Petit</div>
+                    <div>128x128</div>
+                </div>
+                <div class="size-option" onclick="selectSize(256)">
+                    <div>Moyen</div>
+                    <div>256x256</div>
+                </div>
+                <div class="size-option" onclick="selectSize(512)">
+                    <div>Grand</div>
+                    <div>512x512</div>
+                </div>
+            </div>
+        </div>
+        
+        <button onclick="generateQR()">🚀 Générer le QR Code</button>
+        
+        <div id="result" class="qr-result" style="display: none;">
+            <h3>Votre QR Code WebAR :</h3>
+            <div id="qrcode"></div>
+            <p id="customText"></p>
+            
+            <div>
+                <button class="download-btn" onclick="downloadQR('png')">📱 Télécharger PNG</button>
+                <button class="download-btn" onclick="downloadQR('svg')">🎨 Télécharger SVG</button>
+                <button class="download-btn" onclick="copyUrl()">🔗 Copier le lien</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentQRCode = null;
+        let currentSize = 128;
+        
+        function selectSize(size) {
+            currentSize = size;
+            document.querySelectorAll('.size-option').forEach(el => el.classList.remove('active'));
+            event.target.closest('.size-option').classList.add('active');
+        }
+        
+        function generateQR() {
+            const url = document.getElementById('webUrl').value;
+            const customText = document.getElementById('qrText').value;
+            const fgColor = document.getElementById('fgColor').value;
+            const bgColor = document.getElementById('bgColor').value;
+            
+            if (!url) {
+                alert('Veuillez entrer une URL valide');
+                return;
+            }
+            
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            
+            const options = {
+                width: currentSize,
+                height: currentSize,
+                color: {
+                    dark: fgColor,
+                    light: bgColor
+                },
+                margin: 2,
+                errorCorrectionLevel: 'M'
+            };
+            
+            QRCode.toCanvas(url, options, function (error, canvas) {
+                if (error) {
+                    console.error(error);
+                    alert('Erreur lors de la génération du QR code');
+                    return;
+                }
+                
+                currentQRCode = canvas;
+                qrContainer.appendChild(canvas);
+                
+                document.getElementById('customText').textContent = 
+                    customText || 'Scannez ce code pour accéder à l\'expérience WebAR !';
+                document.getElementById('result').style.display = 'block';
+            });
+        }
+        
+        function downloadQR(format) {
+            if (!currentQRCode) {
+                alert('Veuillez d\'abord générer un QR code');
+                return;
+            }
+            
+            const url = document.getElementById('webUrl').value;
+            const hostname = new URL(url).hostname.replace(/\./g, '-');
+            const filename = `webar-qr-${hostname}.${format}`;
+            
+            if (format === 'png') {
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = currentQRCode.toDataURL();
+                link.click();
+            } else if (format === 'svg') {
+                const svgUrl = document.getElementById('webUrl').value;
+                const fgColor = document.getElementById('fgColor').value;
+                const bgColor = document.getElementById('bgColor').value;
+                
+                QRCode.toString(svgUrl, {
+                    type: 'svg',
+                    width: currentSize,
+                    color: {
+                        dark: fgColor,
+                        light: bgColor
+                    }
+                }, function (error, svg) {
+                    if (error) {
+                        console.error(error);
+                        return;
+                    }
+                    
+                    const blob = new Blob([svg], { type: 'image/svg+xml' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.download = filename;
+                    link.href = url;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                });
+            }
+        }
+        
+        function copyUrl() {
+            const url = document.getElementById('webUrl').value;
+            navigator.clipboard.writeText(url).then(() => {
+                alert('URL copiée dans le presse-papier !');
+            });
+        }
+        
+        // Générer un QR code par défaut
+        window.onload = function() {
+            // Auto-remplir avec l'URL locale si on est en développement
+            if (window.location.hostname === 'localhost' || window.location.hostname === '192.168.1.38') {
+                document.getElementById('webUrl').value = window.location.origin;
+            }
+        };
+    </script>
+</body>
+</html> 
