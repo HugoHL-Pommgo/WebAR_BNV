@@ -3,80 +3,53 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>WebAR - Plante 3D</title>
+  <title>WebAR - Plante 3D sur Fleur</title>
   
-  <!-- MindAR + A-Frame pour image tracking personnalisée -->
+  <!-- MindAR + A-Frame -->
   <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
-    body {
+    * {
       margin: 0;
-      font-family: Arial, sans-serif;
-      overflow: hidden;
+      padding: 0;
+      box-sizing: border-box;
     }
     
-    /* Correction pour Mozilla/Mac - Force le centrage complet */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+    
     a-scene {
       position: fixed !important;
       top: 0 !important;
       left: 0 !important;
       width: 100vw !important;
       height: 100vh !important;
+      margin: 0 !important;
+      padding: 0 !important;
       z-index: 1;
     }
     
-    /* Canvas AR centré et responsive */
     canvas {
-      position: fixed !important;
-      top: 50% !important;
-      left: 50% !important;
-      transform: translate(-50%, -50%) !important;
-      max-width: 100vw !important;
-      max-height: 100vh !important;
-      width: auto !important;
-      height: auto !important;
-      object-fit: cover;
+      transform: scaleX(-1) !important;
     }
     
-    /* Fixes spécifiques Mozilla */
-    @-moz-document url-prefix() {
-      canvas {
-        position: absolute !important;
-        top: 0 !important;
-        left: 0 !important;
-        transform: none !important;
-        width: 100% !important;
-        height: 100% !important;
-      }
-      
-      a-scene {
-        display: block !important;
-        position: absolute !important;
-      }
+    video {
+      transform: scaleX(-1) !important;
     }
     
-    #startButton {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      padding: 20px 40px;
-      font-size: 24px;
-      background: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      z-index: 999;
-    }
-    
-    #instructions {
+    #info {
       position: fixed;
       bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,0.8);
+      background: rgba(0,0,0,0.9);
       color: white;
       padding: 15px 25px;
       border-radius: 10px;
@@ -84,457 +57,84 @@
       z-index: 998;
       font-size: 16px;
     }
-    
-    #detectionZone {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 180px;
-      height: 180px;
-      border: 2px solid rgba(255, 193, 7, 0.6);
-      border-radius: 15px;
-      z-index: 997;
-      pointer-events: none;
-      animation: guideAnimation 3s infinite;
-    }
-    
-    #detectionZone::before {
-      content: "";
-      position: absolute;
-      top: -8px;
-      left: -8px;
-      right: -8px;
-      bottom: -8px;
-      border: 1px dashed rgba(255, 193, 7, 0.3);
-      border-radius: 20px;
-    }
-    
-    #detectionZone::after {
-      content: "🌻 Pointez vers l'image de fleur";
-      position: absolute;
-      top: -35px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255, 193, 7, 0.9);
-      color: white;
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-size: 12px;
-      white-space: nowrap;
-    }
-    
-    @keyframes guideAnimation {
-      0% { 
-        opacity: 0.6;
-        transform: translate(-50%, -50%) scale(1);
-      }
-      50% { 
-        opacity: 0.8;
-        transform: translate(-50%, -50%) scale(1.05);
-      }
-      100% { 
-        opacity: 0.6;
-        transform: translate(-50%, -50%) scale(1);
-      }
-    }
-    
-    #fullDetectionArea {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      border: 3px solid rgba(255, 193, 7, 0.2);
-      z-index: 996;
-      pointer-events: none;
-      animation: fullAreaPulse 4s infinite;
-    }
-    
-    @keyframes fullAreaPulse {
-      0%, 100% { border-color: rgba(255, 193, 7, 0.2); }
-      50% { border-color: rgba(255, 193, 7, 0.4); }
-    }
-    
-    #debugInfo {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      background: rgba(0,0,0,0.8);
-      color: white;
-      padding: 10px;
-      border-radius: 5px;
-      font-size: 12px;
-      z-index: 995;
-    }
-    
-    /* Image target transparente comme guide */
-    #targetGuide {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 200px;
-      height: auto;
-      opacity: 0.3;
-      border: 2px dashed rgba(255, 193, 7, 0.8);
-      border-radius: 10px;
-      z-index: 990;
-      transition: opacity 0.5s ease;
-      pointer-events: none;
-    }
-    
-    #targetGuide.detected {
-      opacity: 0;
-    }
-    
-    .hidden {
-      display: none !important;
-    }
-    
-    .detected {
-      border-color: #FF9800 !important;
-      animation: detectedGlow 1s infinite alternate !important;
-    }
-    
-    .detected::after {
-      content: "✅ Fleur détectée!" !important;
-      background: rgba(255, 152, 0, 0.9) !important;
-    }
-    
-    @keyframes detectedGlow {
-      0% { box-shadow: 0 0 10px rgba(255, 152, 0, 0.6); }
-      100% { box-shadow: 0 0 20px rgba(255, 152, 0, 0.9); }
-    }
-    
-    .full-detection {
-      border-color: rgba(255, 152, 0, 0.6) !important;
-      animation: none !important;
-    }
   </style>
 </head>
 <body>
-  <button id="startButton" onclick="startAR()">🚀 Démarrer AR</button>
   
-  <div id="instructions" class="hidden">
+  <div id="info">
     🌻 Pointez vers l'image de fleur jaune<br>
-    Distance: 20-50cm • Bon éclairage requis<br>
-    <a href="flower-target.html" style="color: #FFC107; text-decoration: underline;">📄 Voir l'image cible</a>
+    <a href="flower-target.html" style="color: #4CAF50;">📄 Voir l'image cible</a>
   </div>
 
-  <div id="detectionZone" class="hidden"></div>
-  <div id="fullDetectionArea" class="hidden"></div>
-  
-  <!-- Image target transparente comme guide -->
-  <img id="targetGuide" 
-       src="./assets/quatre-sortes-fleurs-jaunes_1308-2129.jpg" 
-       alt="Guide image target" 
-       class="hidden">
-
-  <div id="debugInfo" class="hidden">
-    Status: Initialisation...<br>
-    Type: Image de fleur
-  </div>
-
-  <a-scene 
-    id="arScene"
-    class="hidden"
+  <a-scene
     embedded
-    mindar-image="imageTargetSrc: ./assets/targets.mind; 
-                  maxTrack: 1; 
-                  filterMinCF: 0.0001; 
-                  filterBeta: 0.01; 
-                  uiLoading: no; 
-                  uiScanning: no; 
-                  uiError: no;"
-    color-space="sRGB" 
-    renderer="colorManagement: true; physicallyCorrectLights; alpha: true;"
+    mindar-image="imageTargetSrc: ./assets/targets.mind; maxTrack: 1; showStats: false; uiLoading: no; uiScanning: no; uiError: no; filterMinCF: 0.0001; filterBeta: 0.001; warmupTolerance: 5; missTolerance: 5;"
+    renderer="logarithmicDepthBuffer: true; colorManagement: true; physicallyCorrectLights: true; alpha: true;"
     vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false">
+    loading-screen="enabled: false">
     
-    <!-- Caméra AR pour MindAR -->
-    <a-camera 
-      position="0 0 0"
-      look-controls="enabled: false"
-      cursor="fuse: false; rayOrigin: mouse;"
-      raycaster="far: 10000; objects: .clickable">
-    </a-camera>
-    
-    <!-- Assets avec chemins GitHub Pages -->
     <a-assets>
-      <a-asset-item id="plantModel" src="./assets/topfpflanze_final.glb"></a-asset-item>
+      <a-asset-item id="plantAsset" src="./assets/topfpflanze_final.glb"></a-asset-item>
     </a-assets>
     
-    <!-- Éclairage optimisé pour image tracking -->
-    <a-light type="ambient" color="#ffffff" intensity="0.6"></a-light>
-    <a-light type="directional" position="2 2 2" color="#ffffff" intensity="1.2"></a-light>
-    <a-light type="point" position="0 2 0" color="#FFC107" intensity="0.4"></a-light>
+    <!-- Éclairage optimisé pour la plante -->
+    <a-light type="ambient" color="#ffffff" intensity="1.2"></a-light>
+    <a-light type="directional" position="5 10 5" color="#ffffff" intensity="2"></a-light>
+    <a-light type="point" position="0 3 2" color="#ffffff" intensity="1.5"></a-light>
     
-    <!-- Anchor pour image target (index 0) -->
-    <a-entity 
-      id="flowerTarget"
-      mindar-image-target="targetIndex: 0"
-      visible="false">
+    <!-- Caméra -->
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    
+    <!-- TARGET FLEUR -->
+    <a-entity mindar-image-target="targetIndex: 0">
       
-      <!-- Modèle 3D de la plante -->
+      <!-- VOTRE PLANTE 3D - SEUL ÉLÉMENT VISIBLE -->
       <a-gltf-model
-        id="plantModel3D"
-        src="#plantModel"
+        id="plantModel"
+        src="#plantAsset"
         position="0 0 0"
         rotation="-90 0 0"
-        scale="0.3 0.3 0.3"
-        visible="true"
-        animation__scale="property: scale; 
-                         to: 0.35 0.35 0.35; 
-                         dur: 2000; 
-                         dir: alternate; 
-                         loop: true; 
-                         easing: easeInOutSine">
+        scale="1.2 1.2 1.2"
+        animation="property: rotation; to: -90 360 0; loop: true; dur: 8000; easing: linear;">
       </a-gltf-model>
-      
-      <!-- Indicateur circulaire autour de la plante -->
-      <a-ring
-        position="0 0.02 0"
-        rotation="-90 0 0"
-        radius-inner="0.7"
-        radius-outer="0.9"
-        color="#FFC107"
-        opacity="0.6"
-        id="flowerRing"
-        animation="property: rotation; 
-                   to: -90 360 0; 
-                   loop: true; 
-                   dur: 6000; 
-                   easing: linear">
-      </a-ring>
-      
-      <!-- Particules flottantes -->
-      <a-sphere
-        position="0.3 1 0.3"
-        radius="0.03"
-        color="#FFC107"
-        opacity="0.8"
-        animation="property: position; 
-                   to: 0.3 1.5 0.3; 
-                   loop: true; 
-                   dur: 3000; 
-                   dir: alternate; 
-                   easing: easeInOutSine">
-      </a-sphere>
-      
-      <a-sphere
-        position="-0.2 1.2 -0.2"
-        radius="0.025"
-        color="#FFE082"
-        opacity="0.7"
-        animation="property: position; 
-                   to: -0.2 1.8 -0.2; 
-                   loop: true; 
-                   dur: 4000; 
-                   dir: alternate; 
-                   easing: easeInOutSine">
-      </a-sphere>
       
     </a-entity>
     
   </a-scene>
 
   <script>
-    let flowerTarget;
-    let debugInfo;
-    let detectionZone;
-    let fullDetectionArea;
-    let targetGuide;
-    let targetFound = false;
-    let lastDetectionTime = 0;
-    let cameraPermissionGranted = false;
-
-    async function checkCameraPermission() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        cameraPermissionGranted = true;
-        console.log('✅ Permission caméra accordée');
-        stream.getTracks().forEach(track => track.stop());
-        return true;
-      } catch (error) {
-        console.error('❌ Erreur permission caméra:', error);
-        debugInfo.innerHTML = 'Status: ❌ Accès caméra refusé<br>Cliquez sur 🔒 pour autoriser';
-        debugInfo.style.background = 'rgba(244, 67, 54, 0.8)';
-        return false;
-      }
-    }
-
-    async function startAR() {
-      document.getElementById('startButton').classList.add('hidden');
-      document.getElementById('debugInfo').classList.remove('hidden');
+    console.log('🌱 WebAR - Plante 3D Pure');
+    console.log('📁 Modèle: ./assets/topfpflanze_final.glb');
+    console.log('🎯 Target: ./assets/targets.mind (fleur)');
+    
+    setTimeout(() => {
+      const target = document.querySelector('[mindar-image-target]');
+      const plant = document.querySelector('#plantModel');
       
-      debugInfo = document.querySelector('#debugInfo');
-      debugInfo.innerHTML = 'Status: 🔍 Vérification caméra...<br>Type: Image de fleur';
+      console.log('Target trouvé:', target);
+      console.log('Plante trouvée:', plant);
       
-      // Vérifier l'accès caméra d'abord
-      const hasCamera = await checkCameraPermission();
-      
-      if (!hasCamera) {
-        debugInfo.innerHTML = 'Status: ⚠️ Caméra requise<br>💡 Autorisez dans les paramètres';
-        return;
-      }
-      
-      // Si caméra OK, démarrer l'AR
-      document.getElementById('arScene').classList.remove('hidden');
-      document.getElementById('instructions').classList.remove('hidden');
-      document.getElementById('detectionZone').classList.remove('hidden');
-      document.getElementById('fullDetectionArea').classList.remove('hidden');
-      document.getElementById('targetGuide').classList.remove('hidden');
-      
-      debugInfo.innerHTML = 'Status: 🚀 Initialisation MindAR...<br>Type: Image de fleur';
-      
-      // Force le canvas à se positionner correctement sur Mozilla
-      setTimeout(() => {
-        const canvas = document.querySelector('canvas');
-        if (canvas && navigator.userAgent.includes('Firefox')) {
-          canvas.style.position = 'absolute';
-          canvas.style.top = '0';
-          canvas.style.left = '0';
-          canvas.style.width = '100%';
-          canvas.style.height = '100%';
-          canvas.style.transform = 'none';
-        }
-      }, 500);
-      
-      // Attendre que MindAR se charge
-      setTimeout(() => {
-        try {
-          setupImageTracking();
-        } catch (error) {
-          console.error('Erreur démarrage AR:', error);
-          debugInfo.innerHTML = 'Status: ❌ Erreur MindAR<br>Rechargez la page';
-        }
-      }, 2000);
-    }
-
-    function setupImageTracking() {
-      flowerTarget = document.querySelector('#flowerTarget');
-      detectionZone = document.querySelector('#detectionZone');
-      fullDetectionArea = document.querySelector('#fullDetectionArea');
-      targetGuide = document.querySelector('#targetGuide');
-      
-      debugInfo.innerHTML = 'Status: 🌻 Recherche image fleur...<br>Pointez vers l\'image';
-      
-      if (flowerTarget) {
-        // Événements de détection image
-        flowerTarget.addEventListener('targetFound', function() {
-          console.log('🌻 Image de fleur détectée!');
-          targetFound = true;
-          lastDetectionTime = Date.now();
+      if (target) {
+        target.addEventListener('targetFound', function() {
+          console.log('🌻 FLEUR DÉTECTÉE - Plante 3D visible !');
+          document.getElementById('info').innerHTML = '🌱 PLANTE 3D ACTIVE !<br><strong>Bougez l\'image pour voir l\'effet</strong>';
+          document.getElementById('info').style.background = 'rgba(76, 175, 80, 0.9)';
           
-          // Mise à jour visuelle
-          detectionZone.classList.add('detected');
-          fullDetectionArea.classList.add('full-detection');
-          targetGuide.classList.add('detected'); // Cache l'image guide
-          debugInfo.innerHTML = 'Status: ✅ FLEUR DÉTECTÉE!<br>Modèle 3D affiché';
-          debugInfo.style.background = 'rgba(255, 193, 7, 0.8)';
-          
-          // Feedback tactile
+          // Vibration douce
           if (navigator.vibrate) {
-            navigator.vibrate([150, 100, 150, 100, 300]);
+            navigator.vibrate([200, 100, 200]);
           }
         });
-
-        flowerTarget.addEventListener('targetLost', function() {
-          console.log('❌ Image de fleur perdue');
-          targetFound = false;
-          
-          // Retour visuel normal
-          detectionZone.classList.remove('detected');
-          fullDetectionArea.classList.remove('full-detection');
-          targetGuide.classList.remove('detected'); // Réaffiche l'image guide
-          debugInfo.innerHTML = 'Status: 🔍 Recherche fleur...<br>Repositionnez l\'image';
-          debugInfo.style.background = 'rgba(0,0,0,0.8)';
+        
+        target.addEventListener('targetLost', function() {
+          console.log('❌ Fleur perdue');
+          document.getElementById('info').innerHTML = '🌻 Pointez vers l\'image de fleur jaune<br><a href="flower-target.html" style="color: #4CAF50;">📄 Voir l\'image cible</a>';
+          document.getElementById('info').style.background = 'rgba(0,0,0,0.9)';
         });
+        
+        console.log('✅ AR configuré pour plante 3D uniquement');
       }
-      
-      // Mise à jour dynamique du statut
-      setInterval(() => {
-        if (!targetFound && cameraPermissionGranted) {
-          const tips = [
-            'Status: 🌻 Recherche active...<br>💡 Montrez l\'image de fleur',
-            'Status: 🔍 Scanning...<br>💡 Améliorez l\'éclairage',
-            'Status: 🌻 Détection...<br>💡 Tenez l\'image stable',
-            'Status: 🔍 Recherche...<br>💡 Distance 20-50cm'
-          ];
-          
-          let tipIndex = Math.floor(Date.now() / 3000) % tips.length;
-          debugInfo.innerHTML = tips[tipIndex];
-          
-          // Encouragement si pas de détection
-          if (Date.now() - lastDetectionTime > 15000 && lastDetectionTime > 0) {
-            debugInfo.innerHTML = 'Status: 💪 Continuez!<br>💡 L\'image sera détectée';
-            debugInfo.style.background = 'rgba(255, 193, 7, 0.8)';
-          }
-        }
-      }, 2000);
-      
-      // Animation du guide visuel
-      setInterval(() => {
-        if (!targetFound) {
-          detectionZone.style.transform = 'translate(-50%, -50%) scale(' + (0.95 + Math.sin(Date.now() / 1000) * 0.1) + ')';
-        }
-      }, 100);
-    }
-
-    // Optimisations mobiles et Mozilla
-    if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-      console.log('📱 Mobile détecté - tracking d\'image optimisé');
-      
-      document.addEventListener('touchstart', function(e) {
-        if (e.touches.length > 1) {
-          e.preventDefault();
-        }
-      });
-      
-      document.addEventListener('touchmove', function(e) {
-        e.preventDefault();
-      }, { passive: false });
-    }
-
-    // Corrections spécifiques Mozilla/Firefox
-    if (navigator.userAgent.includes('Firefox')) {
-      console.log('🦊 Firefox détecté - corrections de centrage appliquées');
-      
-      // Force le style du canvas après chargement
-      window.addEventListener('load', () => {
-        setTimeout(() => {
-          const canvas = document.querySelector('canvas');
-          if (canvas) {
-            canvas.style.cssText = `
-              position: absolute !important;
-              top: 0 !important;
-              left: 0 !important;
-              width: 100% !important;
-              height: 100% !important;
-              transform: none !important;
-              object-fit: cover !important;
-            `;
-          }
-        }, 1000);
-      });
-    }
-
-    // Gestion d'erreurs
-    window.addEventListener('error', function(e) {
-      console.error('Erreur AR:', e.error);
-      if (debugInfo) {
-        debugInfo.innerHTML = 'Status: ⚠️ Erreur détectée<br>🔄 Rechargez la page';
-        debugInfo.style.background = 'rgba(244, 67, 54, 0.8)';
-      }
-    });
-
-    // Log pour debug
-    console.log('🌻 WebAR Plant Project - Image Tracking');
-    console.log('📱 URL:', window.location.href);
-    console.log('🔒 HTTPS:', window.location.protocol === 'https:');
-    console.log('🎯 Target:', './assets/targets.mind');
-    console.log('🦊 Firefox:', navigator.userAgent.includes('Firefox'));
+    }, 2000);
   </script>
 </body>
 </html>
