@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WebAR - Plante 3D</title>
   
-  <!-- AR.js - Configuration pour détection plein écran -->
+  <!-- MindAR + A-Frame pour image tracking personnalisée -->
   <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
     body {
@@ -51,7 +51,7 @@
       transform: translate(-50%, -50%);
       width: 180px;
       height: 180px;
-      border: 2px solid rgba(76, 175, 80, 0.6);
+      border: 2px solid rgba(255, 193, 7, 0.6);
       border-radius: 15px;
       z-index: 997;
       pointer-events: none;
@@ -65,17 +65,17 @@
       left: -8px;
       right: -8px;
       bottom: -8px;
-      border: 1px dashed rgba(76, 175, 80, 0.3);
+      border: 1px dashed rgba(255, 193, 7, 0.3);
       border-radius: 20px;
     }
     
     #detectionZone::after {
-      content: "💡 Zone suggérée (détection partout)";
+      content: "🌻 Pointez vers l'image de fleur";
       position: absolute;
       top: -35px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(76, 175, 80, 0.8);
+      background: rgba(255, 193, 7, 0.9);
       color: white;
       padding: 4px 8px;
       border-radius: 12px;
@@ -104,15 +104,15 @@
       left: 0;
       right: 0;
       bottom: 0;
-      border: 3px solid rgba(76, 175, 80, 0.2);
+      border: 3px solid rgba(255, 193, 7, 0.2);
       z-index: 996;
       pointer-events: none;
       animation: fullAreaPulse 4s infinite;
     }
     
     @keyframes fullAreaPulse {
-      0%, 100% { border-color: rgba(76, 175, 80, 0.2); }
-      50% { border-color: rgba(76, 175, 80, 0.4); }
+      0%, 100% { border-color: rgba(255, 193, 7, 0.2); }
+      50% { border-color: rgba(255, 193, 7, 0.4); }
     }
     
     #debugInfo {
@@ -137,7 +137,7 @@
     }
     
     .detected::after {
-      content: "✅ Marqueur détecté!" !important;
+      content: "✅ Fleur détectée!" !important;
       background: rgba(255, 152, 0, 0.9) !important;
     }
     
@@ -156,9 +156,9 @@
   <button id="startButton" onclick="startAR()">🚀 Démarrer AR</button>
   
   <div id="instructions" class="hidden">
-    📱 Pointez le marqueur n'importe où dans l'écran<br>
-    Le cadre vert est juste un guide • Distance: 20-50cm<br>
-    <a href="marker.html" style="color: #4CAF50; text-decoration: underline;">📄 Télécharger le marqueur</a>
+    🌻 Pointez vers l'image de fleur jaune<br>
+    Distance: 20-50cm • Bon éclairage requis<br>
+    <a href="assets/quatre-sortes-fleurs-jaunes_1308-2129.jpg" target="_blank" style="color: #FFC107; text-decoration: underline;">📄 Voir l'image cible</a>
   </div>
 
   <div id="detectionZone" class="hidden"></div>
@@ -166,34 +166,31 @@
 
   <div id="debugInfo" class="hidden">
     Status: Initialisation...<br>
-    Zone: Plein écran
+    Type: Image de fleur
   </div>
 
   <a-scene 
     id="arScene"
     class="hidden"
     embedded
-    arjs="sourceType: webcam; 
-          debugUIEnabled: false; 
-          detectionMode: mono_and_matrix; 
-          matrixCodeType: 3x3;
-          maxDetectionRate: 60;
-          canvasWidth: 800;
-          canvasHeight: 600;
-          trackingMethod: best;
-          sourceWidth: 800;
-          sourceHeight: 600;
-          displayWidth: 800;
-          displayHeight: 600;"
-    renderer="logarithmicDepthBuffer: true; colorManagement: true; antialias: true;"
+    mindar-image="imageTargetSrc: ./assets/targets.mind; 
+                  maxTrack: 1; 
+                  filterMinCF: 0.0001; 
+                  filterBeta: 0.01; 
+                  uiLoading: no; 
+                  uiScanning: no; 
+                  uiError: no;"
+    color-space="sRGB" 
+    renderer="colorManagement: true; physicallyCorrectLights"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false">
     
-    <!-- Caméra AR avec vue complète -->
+    <!-- Caméra AR pour MindAR -->
     <a-camera 
-      rotation-reader
-      look-controls-enabled="false"
-      arjs-look-controls="smoothingFactor: 0.1;">
+      position="0 0 0"
+      look-controls="enabled: false"
+      cursor="fuse: false; rayOrigin: mouse;"
+      raycaster="far: 10000; objects: .clickable">
     </a-camera>
     
     <!-- Assets avec chemins GitHub Pages -->
@@ -201,61 +198,86 @@
       <a-asset-item id="plantModel" src="./assets/topfpflanze_final.glb"></a-asset-item>
     </a-assets>
     
-    <!-- Éclairage optimisé -->
-    <a-light type="ambient" color="#ffffff" intensity="0.7"></a-light>
-    <a-light type="directional" position="1 1 1" color="#ffffff" intensity="1.0"></a-light>
-    <a-light type="point" position="0 1 0" color="#ffffff" intensity="0.5"></a-light>
+    <!-- Éclairage optimisé pour image tracking -->
+    <a-light type="ambient" color="#ffffff" intensity="0.6"></a-light>
+    <a-light type="directional" position="2 2 2" color="#ffffff" intensity="1.2"></a-light>
+    <a-light type="point" position="0 2 0" color="#FFC107" intensity="0.4"></a-light>
     
-    <!-- Marqueur avec détection plein écran -->
-    <a-marker 
-      preset="hiro"
-      id="hiroMarker"
-      smooth="true"
-      smoothCount="3"
-      smoothTolerance="0.02"
-      smoothThreshold="3"
-      emitevents="true"
-      size="1">
+    <!-- Anchor pour image target (index 0) -->
+    <a-entity 
+      id="flowerTarget"
+      mindar-image-target="targetIndex: 0"
+      visible="false">
       
+      <!-- Modèle 3D de la plante -->
       <a-gltf-model
         id="plantModel3D"
         src="#plantModel"
         position="0 0 0"
         rotation="-90 0 0"
-        scale="0.25 0.25 0.25"
-        visible="true">
+        scale="0.3 0.3 0.3"
+        visible="true"
+        animation__scale="property: scale; 
+                         to: 0.35 0.35 0.35; 
+                         dur: 2000; 
+                         dir: alternate; 
+                         loop: true; 
+                         easing: easeInOutSine">
       </a-gltf-model>
       
-      <!-- Indicateur de détection -->
+      <!-- Indicateur circulaire autour de la plante -->
       <a-ring
         position="0 0.02 0"
         rotation="-90 0 0"
-        radius-inner="0.6"
-        radius-outer="0.8"
-        color="#4CAF50"
-        opacity="0.4"
-        id="detectionRing"
-        animation="property: rotation; to: -90 360 0; loop: true; dur: 4000; easing: linear">
+        radius-inner="0.7"
+        radius-outer="0.9"
+        color="#FFC107"
+        opacity="0.6"
+        id="flowerRing"
+        animation="property: rotation; 
+                   to: -90 360 0; 
+                   loop: true; 
+                   dur: 6000; 
+                   easing: linear">
       </a-ring>
       
-      <!-- Effet de particules -->
+      <!-- Particules flottantes -->
       <a-sphere
-        position="0 1 0"
-        radius="0.05"
-        color="#4CAF50"
+        position="0.3 1 0.3"
+        radius="0.03"
+        color="#FFC107"
         opacity="0.8"
-        animation="property: position; to: 0 2 0; loop: true; dur: 2000; dir: alternate; easing: easeInOutSine">
+        animation="property: position; 
+                   to: 0.3 1.5 0.3; 
+                   loop: true; 
+                   dur: 3000; 
+                   dir: alternate; 
+                   easing: easeInOutSine">
       </a-sphere>
-    </a-marker>
+      
+      <a-sphere
+        position="-0.2 1.2 -0.2"
+        radius="0.025"
+        color="#FFE082"
+        opacity="0.7"
+        animation="property: position; 
+                   to: -0.2 1.8 -0.2; 
+                   loop: true; 
+                   dur: 4000; 
+                   dir: alternate; 
+                   easing: easeInOutSine">
+      </a-sphere>
+      
+    </a-entity>
     
   </a-scene>
 
   <script>
-    let marker;
+    let flowerTarget;
     let debugInfo;
     let detectionZone;
     let fullDetectionArea;
-    let markerFound = false;
+    let targetFound = false;
     let lastDetectionTime = 0;
     let cameraPermissionGranted = false;
 
@@ -264,7 +286,7 @@
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         cameraPermissionGranted = true;
         console.log('✅ Permission caméra accordée');
-        stream.getTracks().forEach(track => track.stop()); // Arrêter le stream de test
+        stream.getTracks().forEach(track => track.stop());
         return true;
       } catch (error) {
         console.error('❌ Erreur permission caméra:', error);
@@ -279,13 +301,12 @@
       document.getElementById('debugInfo').classList.remove('hidden');
       
       debugInfo = document.querySelector('#debugInfo');
-      debugInfo.innerHTML = 'Status: 🔍 Vérification caméra...<br>Zone: Initialisation';
+      debugInfo.innerHTML = 'Status: 🔍 Vérification caméra...<br>Type: Image de fleur';
       
       // Vérifier l'accès caméra d'abord
       const hasCamera = await checkCameraPermission();
       
       if (!hasCamera) {
-        // Afficher des instructions pour autoriser la caméra
         debugInfo.innerHTML = 'Status: ⚠️ Caméra requise<br>💡 Autorisez dans les paramètres';
         return;
       }
@@ -296,77 +317,73 @@
       document.getElementById('detectionZone').classList.remove('hidden');
       document.getElementById('fullDetectionArea').classList.remove('hidden');
       
-      debugInfo.innerHTML = 'Status: 🚀 Démarrage AR...<br>Zone: Plein écran';
+      debugInfo.innerHTML = 'Status: 🚀 Initialisation MindAR...<br>Type: Image de fleur';
       
-      // Attendre un peu que A-Frame se charge
+      // Attendre que MindAR se charge
       setTimeout(() => {
         try {
-          document.querySelector('a-scene').play();
-          setupFullScreenDetection();
+          setupImageTracking();
         } catch (error) {
           console.error('Erreur démarrage AR:', error);
-          debugInfo.innerHTML = 'Status: ❌ Erreur AR<br>Rechargez la page';
+          debugInfo.innerHTML = 'Status: ❌ Erreur MindAR<br>Rechargez la page';
         }
-      }, 1000);
+      }, 2000);
     }
 
-    function setupFullScreenDetection() {
-      marker = document.querySelector('#hiroMarker');
+    function setupImageTracking() {
+      flowerTarget = document.querySelector('#flowerTarget');
       detectionZone = document.querySelector('#detectionZone');
       fullDetectionArea = document.querySelector('#fullDetectionArea');
       
-      debugInfo.innerHTML = 'Status: 🔍 Recherche marqueur...<br>Zone: Plein écran actif';
+      debugInfo.innerHTML = 'Status: 🌻 Recherche image fleur...<br>Pointez vers l\'image';
       
-      if (marker) {
-        // Événements de détection plein écran
-        marker.addEventListener('markerFound', function() {
-          console.log('🎯 Marqueur détecté! (zone complète)');
-          markerFound = true;
+      if (flowerTarget) {
+        // Événements de détection image
+        flowerTarget.addEventListener('targetFound', function() {
+          console.log('🌻 Image de fleur détectée!');
+          targetFound = true;
           lastDetectionTime = Date.now();
           
-          // Mise à jour visuelle complète
+          // Mise à jour visuelle
           detectionZone.classList.add('detected');
           fullDetectionArea.classList.add('full-detection');
-          debugInfo.innerHTML = 'Status: ✅ DÉTECTÉ!<br>Zone: Plein écran actif';
-          debugInfo.style.background = 'rgba(76, 175, 80, 0.8)';
+          debugInfo.innerHTML = 'Status: ✅ FLEUR DÉTECTÉE!<br>Plante en cours d\'affichage';
+          debugInfo.style.background = 'rgba(255, 193, 7, 0.8)';
           
-          // Feedback tactile sur mobile
+          // Feedback tactile
           if (navigator.vibrate) {
-            navigator.vibrate([100, 50, 100, 50, 200]);
+            navigator.vibrate([150, 100, 150, 100, 300]);
           }
         });
 
-        marker.addEventListener('markerLost', function() {
-          console.log('❌ Marqueur perdu');
-          markerFound = false;
+        flowerTarget.addEventListener('targetLost', function() {
+          console.log('❌ Image de fleur perdue');
+          targetFound = false;
           
           // Retour visuel normal
           detectionZone.classList.remove('detected');
           fullDetectionArea.classList.remove('full-detection');
-          debugInfo.innerHTML = 'Status: 🔍 Recherche...<br>Zone: Plein écran';
+          debugInfo.innerHTML = 'Status: 🔍 Recherche fleur...<br>Repositionnez l\'image';
           debugInfo.style.background = 'rgba(0,0,0,0.8)';
         });
       }
       
       // Mise à jour dynamique du statut
       setInterval(() => {
-        if (!markerFound && cameraPermissionGranted) {
-          const currentTime = Date.now();
-          const timeSinceLastDetection = currentTime - lastDetectionTime;
-          
+        if (!targetFound && cameraPermissionGranted) {
           const tips = [
-            'Status: 🔍 Recherche active...<br>💡 Montrez le marqueur partout',
+            'Status: 🌻 Recherche active...<br>💡 Montrez l\'image de fleur',
             'Status: 🔍 Scanning...<br>💡 Améliorez l\'éclairage',
-            'Status: 🔍 Détection active...<br>💡 Bougez lentement',
-            'Status: 🔍 Recherche...<br>💡 Tenez le marqueur stable'
+            'Status: 🌻 Détection...<br>💡 Tenez l\'image stable',
+            'Status: 🔍 Recherche...<br>💡 Distance 20-50cm'
           ];
           
           let tipIndex = Math.floor(Date.now() / 3000) % tips.length;
           debugInfo.innerHTML = tips[tipIndex];
           
-          // Encouragement si pas de détection depuis longtemps
-          if (timeSinceLastDetection > 10000 && lastDetectionTime > 0) {
-            debugInfo.innerHTML = 'Status: 💪 Continuez!<br>💡 Le marqueur sera détecté';
+          // Encouragement si pas de détection
+          if (Date.now() - lastDetectionTime > 15000 && lastDetectionTime > 0) {
+            debugInfo.innerHTML = 'Status: 💪 Continuez!<br>💡 L\'image sera détectée';
             debugInfo.style.background = 'rgba(255, 193, 7, 0.8)';
           }
         }
@@ -374,30 +391,28 @@
       
       // Animation du guide visuel
       setInterval(() => {
-        if (!markerFound) {
+        if (!targetFound) {
           detectionZone.style.transform = 'translate(-50%, -50%) scale(' + (0.95 + Math.sin(Date.now() / 1000) * 0.1) + ')';
         }
       }, 100);
     }
 
-    // Optimisations spécifiques mobile
+    // Optimisations mobiles
     if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-      console.log('📱 Mobile détecté - détection plein écran optimisée');
+      console.log('📱 Mobile détecté - tracking d\'image optimisé');
       
-      // Prévenir le zoom sur mobile
       document.addEventListener('touchstart', function(e) {
         if (e.touches.length > 1) {
           e.preventDefault();
         }
       });
       
-      // Empêcher le scroll
       document.addEventListener('touchmove', function(e) {
         e.preventDefault();
       }, { passive: false });
     }
 
-    // Gestion des erreurs avec redémarrage automatique
+    // Gestion d'erreurs
     window.addEventListener('error', function(e) {
       console.error('Erreur AR:', e.error);
       if (debugInfo) {
@@ -407,9 +422,10 @@
     });
 
     // Log pour debug
-    console.log('🌱 WebAR Plant Project - Version GitHub Pages');
+    console.log('🌻 WebAR Plant Project - Image Tracking');
     console.log('📱 URL:', window.location.href);
     console.log('🔒 HTTPS:', window.location.protocol === 'https:');
+    console.log('🎯 Target:', './assets/targets.mind');
   </script>
 </body>
 </html>

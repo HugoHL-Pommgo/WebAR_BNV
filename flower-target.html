@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Image Cible - Fleurs Jaunes</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #FFE082, #FFC107);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    
+    .container {
+      text-align: center;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      padding: 30px;
+      max-width: 500px;
+      width: 100%;
+    }
+    
+    h1 {
+      color: #FF8F00;
+      margin-bottom: 20px;
+      font-size: 28px;
+    }
+    
+    .instructions {
+      background: #FFF3E0;
+      border-left: 4px solid #FFC107;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+      text-align: left;
+    }
+    
+    .target-image {
+      max-width: 100%;
+      height: auto;
+      border: 3px solid #FFC107;
+      border-radius: 15px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      margin: 20px 0;
+    }
+    
+    .tips {
+      background: #E8F5E8;
+      border-radius: 10px;
+      padding: 15px;
+      margin: 20px 0;
+      font-size: 14px;
+    }
+    
+    .tips h3 {
+      color: #4CAF50;
+      margin-top: 0;
+    }
+    
+    .back-button {
+      background: #FFC107;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 25px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+      text-decoration: none;
+      display: inline-block;
+      transition: background 0.3s;
+    }
+    
+    .back-button:hover {
+      background: #FF8F00;
+    }
+    
+    .download-button {
+      background: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 20px;
+      margin: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .emoji {
+      font-size: 24px;
+      margin: 0 5px;
+    }
+    
+    @media (max-width: 600px) {
+      .container {
+        margin: 10px;
+        padding: 20px;
+      }
+      
+      h1 {
+        font-size: 24px;
+      }
+      
+      .target-image {
+        max-width: 280px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🌻 Image Cible - Fleurs Jaunes</h1>
+    
+    <div class="instructions">
+      <strong>📱 Comment utiliser :</strong><br>
+      1. Imprimez cette image ou affichez-la sur un autre écran<br>
+      2. Retournez à l'application WebAR<br>
+      3. Pointez votre caméra vers cette image<br>
+      4. La plante 3D apparaîtra ! 🌱
+    </div>
+    
+    <img src="./assets/quatre-sortes-fleurs-jaunes_1308-2129.jpg" 
+         alt="Image cible - Quatre sortes de fleurs jaunes" 
+         class="target-image"
+         id="targetImage">
+    
+    <div class="tips">
+      <h3>💡 Conseils pour une meilleure détection :</h3>
+      • <strong>Éclairage :</strong> Utilisez un bon éclairage, évitez les ombres<br>
+      • <strong>Distance :</strong> Tenez votre téléphone à 20-50cm de l'image<br>
+      • <strong>Stabilité :</strong> Gardez l'image et votre téléphone stables<br>
+      • <strong>Angle :</strong> Pointez directement vers l'image (pas trop incliné)<br>
+      • <strong>Qualité :</strong> L'image doit être nette et bien contrastée
+    </div>
+    
+    <div style="margin: 20px 0;">
+      <a href="./assets/quatre-sortes-fleurs-jaunes_1308-2129.jpg" 
+         download="fleur-target.jpg" 
+         class="download-button">
+        📥 Télécharger l'image
+      </a>
+      
+      <button onclick="printImage()" class="download-button" style="background: #2196F3;">
+        🖨️ Imprimer l'image
+      </button>
+    </div>
+    
+    <a href="index.html" class="back-button">
+      <span class="emoji">🚀</span> Retour à l'AR
+    </a>
+    
+    <div style="margin-top: 30px; font-size: 12px; color: #666;">
+      <strong>Astuce :</strong> Vous pouvez aussi afficher cette page sur un autre téléphone/tablette<br>
+      et pointer votre caméra AR vers cet écran ! 📱➡️📱
+    </div>
+  </div>
+
+  <script>
+    function printImage() {
+      const printWindow = window.open('', '_blank');
+      const img = document.getElementById('targetImage');
+      
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Image Cible - Fleurs Jaunes</title>
+            <style>
+              body { 
+                margin: 0; 
+                display: flex; 
+                justify-content: center; 
+                align-items: center; 
+                min-height: 100vh;
+                background: white;
+              }
+              img { 
+                max-width: 80%; 
+                height: auto; 
+                border: 2px solid #FFC107;
+                border-radius: 10px;
+              }
+              .title {
+                text-align: center;
+                font-family: Arial, sans-serif;
+                color: #FF8F00;
+                margin-bottom: 20px;
+              }
+              .container {
+                text-align: center;
+                padding: 20px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h2 class="title">🌻 Image Cible WebAR - Fleurs Jaunes</h2>
+              <img src="${img.src}" alt="Image cible pour WebAR">
+              <p style="margin-top: 20px; font-size: 14px; color: #666;">
+                Pointez votre caméra AR vers cette image pour voir la plante 3D ! 🌱
+              </p>
+            </div>
+          </body>
+        </html>
+      `);
+      
+      printWindow.document.close();
+      
+      // Attendre que l'image se charge avant d'imprimer
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 1000);
+    }
+
+    // Log pour debug
+    console.log('🌻 Image Cible - Fleurs Jaunes');
+    console.log('📱 Pour WebAR Plant Project');
+  </script>
+</body>
+</html> 
