@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WebAR Viewer</title>
+  
+  <!-- MindAR + A-Frame -->
+  <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+    
+    a-scene {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      z-index: 1;
+    }
+    
+    canvas {
+      transform: scaleX(-1) !important;
+    }
+    
+    video {
+      transform: scaleX(-1) !important;
+    }
+    
+    #info {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.9);
+      color: white;
+      padding: 15px 25px;
+      border-radius: 10px;
+      text-align: center;
+      z-index: 998;
+      font-size: 16px;
+      max-width: 90%;
+    }
+
+    #loading {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.9);
+      color: white;
+      padding: 30px;
+      border-radius: 15px;
+      text-align: center;
+      z-index: 999;
+      border: 2px solid #4CAF50;
+    }
+
+    .loading-spinner {
+      border: 3px solid #333;
+      border-top: 3px solid #4CAF50;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  
+  <div id="loading">
+    <div class="loading-spinner"></div>
+    <div>🌱 Chargement du projet AR...</div>
+  </div>
+
+  <div id="info" style="display: none;">
+    <div id="infoText">🌻 Pointez vers l'image cible</div>
+  </div>
+
+  <a-scene 
+    id="arScene"
+    embedded
+    renderer="logarithmicDepthBuffer: true; colorManagement: true; physicallyCorrectLights: true; alpha: true;"
+    vr-mode-ui="enabled: false"
+    loading-screen="enabled: false"
+    style="display: none;">
+    
+    <a-assets id="arAssets">
+      <!-- Les assets seront ajoutés dynamiquement -->
+    </a-assets>
+    
+    <!-- Éclairage optimisé -->
+    <a-light type="ambient" color="#ffffff" intensity="1.2"></a-light>
+    <a-light type="directional" position="5 10 5" color="#ffffff" intensity="2"></a-light>
+    <a-light type="point" position="0 3 2" color="#ffffff" intensity="1.5"></a-light>
+    
+    <!-- Caméra -->
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    
+    <!-- Les targets et objets seront ajoutés dynamiquement -->
+    
+  </a-scene>
+
+  <script>
+    console.log('🌱 WebAR Viewer - Loading project...');
+    
+    let currentProject = null;
+    let objects = [];
+    let targets = [];
+
+    // Récupérer l'ID du projet depuis l'URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectId = urlParams.get('project');
+
+    if (!projectId) {
+      showError('Aucun projet spécifié dans l\'URL');
+    } else {
+      loadProjectById(projectId);
+    }
+
+    function loadProjectById(projectId) {
+      console.log('🔍 Searching for project:', projectId);
+      
+      // Chercher dans le localStorage d'abord
+      const projects = JSON.parse(localStorage.getItem('arProjects')) || [];
+      const project = projects.find(p => p.uniqueUrl === projectId);
+      
+      if (project) {
+        console.log('✅ Project found:', project.name);
+        loadProject(project);
+      } else {
+        console.log('❌ Project not found in localStorage');
+        
+        // Essayer de charger depuis sessionStorage (projets temporaires)
+        try {
+          const tempProjects = JSON.parse(sessionStorage.getItem('tempArProjects')) || [];
+          const tempProject = tempProjects.find(p => p.uniqueUrl === projectId);
+          
+          if (tempProject) {
+            console.log('✅ Temporary project found:', tempProject.name);
+            loadProject(tempProject);
+            return;
+          }
+        } catch (error) {
+          console.warn('Cannot access sessionStorage:', error);
+        }
+        
+        showError('Projet non trouvé', 
+          'Ce projet n\'existe pas ou a été supprimé.<br>' +
+          'Assurez-vous d\'ouvrir le QR code depuis le même navigateur où le projet a été créé.'
+        );
+      }
+    }
+
+    function loadProject(project) {
+      currentProject = project;
+      
+      console.log('📊 Loading project:', project.name);
+      console.log('Objects count:', project.scene?.objects?.length || 0);
+      console.log('Targets count:', project.targets?.length || 0);
+      
+      // Charger les targets
+      targets = project.targets || [];
+      
+      if (targets.length === 0) {
+        showError('Aucune image cible', 
+          'Ce projet ne contient pas d\'images cibles pour la détection AR.<br>' +
+          'Ajoutez des images targets dans l\'éditeur avant de générer le QR code.'
+        );
+        return;
+      }
+      
+      // Charger les objets 3D
+      objects = project.scene?.objects || [];
+      
+      if (objects.length === 0) {
+        showError('Aucun objet 3D', 
+          'Ce projet ne contient pas d\'objets 3D à afficher.<br>' +
+          'Ajoutez des modèles 3D dans l\'éditeur avant de générer le QR code.'
+        );
+        return;
+      }
+      
+      console.log('✅ Project validation passed');
+      
+      // Afficher les informations du projet
+      document.getElementById('infoText').innerHTML = 
+        `🌱 ${project.name}<br>` +
+        `<small>${objects.length} objets • ${targets.length} targets</small><br>` +
+        `<strong>Pointez vers l'image cible</strong>`;
+      
+      // Créer les données MindAR avec les targets
+      createMindARTargets()
+        .then(() => {
+          setupARScene();
+        })
+        .catch(error => {
+          console.error('Error creating targets:', error);
+          showError('Erreur de chargement', 
+            'Impossible de créer les cibles AR.<br>' +
+            'Vérifiez que les images targets sont valides.'
+          );
+        });
+    }
+
+    function createMindARTargets() {
+      return new Promise((resolve, reject) => {
+        // Pour cette version, on utilise simplement le premier target
+        // TODO: Implémenter la génération dynamique des fichiers .mind
+        
+        console.log('📷 Using first target as main target');
+        
+        // Simuler la création des targets
+        setTimeout(() => {
+          console.log('✅ Targets ready');
+          resolve();
+        }, 1000);
+      });
+    }
+
+    function setupARScene() {
+      const scene = document.getElementById('arScene');
+      const assets = document.getElementById('arAssets');
+      
+      console.log('🎬 Setting up AR scene...');
+      
+      // Configurer MindAR (utilise le fichier targets.mind existant pour cette démo)
+      scene.setAttribute('mindar-image', 
+        'imageTargetSrc: ./assets/targets.mind; maxTrack: 1; showStats: false; uiLoading: no; uiScanning: no; uiError: no; filterMinCF: 0.0001; filterBeta: 0.001; warmupTolerance: 5; missTolerance: 5;'
+      );
+      
+      let assetsLoaded = 0;
+      const totalAssets = objects.filter(obj => obj.type === 'model').length;
+      
+      if (totalAssets === 0) {
+        console.warn('⚠️ No 3D models to load');
+        finishSceneSetup();
+        return;
+      }
+      
+      // Créer les assets pour chaque objet modèle 3D
+      objects.forEach((objData, index) => {
+        if (objData.type === 'model' && objData.modelData) {
+          console.log(`📦 Loading asset ${index}: ${objData.name}`);
+          
+          const assetItem = document.createElement('a-asset-item');
+          assetItem.id = `asset_${index}`;
+          
+          // Convertir les données du modèle en blob URL
+          let blob;
+          try {
+            if (Array.isArray(objData.modelData)) {
+              blob = new Blob([new Uint8Array(objData.modelData)], { type: 'model/gltf-binary' });
+            } else if (objData.modelData instanceof ArrayBuffer) {
+              blob = new Blob([objData.modelData], { type: 'model/gltf-binary' });
+            } else if (typeof objData.modelData === 'string') {
+              // Si c'est du base64, le convertir
+              const binaryString = atob(objData.modelData);
+              const bytes = new Uint8Array(binaryString.length);
+              for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+              }
+              blob = new Blob([bytes], { type: 'model/gltf-binary' });
+            }
+            
+            if (blob && blob.size > 0) {
+              const blobUrl = URL.createObjectURL(blob);
+              assetItem.src = blobUrl;
+              
+              // Écouter le chargement
+              assetItem.addEventListener('loaded', () => {
+                console.log(`✅ Asset loaded: ${objData.name}`);
+                assetsLoaded++;
+                if (assetsLoaded === totalAssets) {
+                  finishSceneSetup();
+                }
+              });
+              
+              assetItem.addEventListener('error', (e) => {
+                console.error(`❌ Asset load error: ${objData.name}`, e);
+                assetsLoaded++;
+                if (assetsLoaded === totalAssets) {
+                  finishSceneSetup();
+                }
+              });
+              
+              assets.appendChild(assetItem);
+              console.log(`✅ Asset item created for: ${objData.name} (${blob.size} bytes)`);
+            } else {
+              console.error(`❌ Invalid blob for: ${objData.name}`);
+              assetsLoaded++;
+              if (assetsLoaded === totalAssets) {
+                finishSceneSetup();
+              }
+            }
+          } catch (error) {
+            console.error(`❌ Error processing model data for ${objData.name}:`, error);
+            assetsLoaded++;
+            if (assetsLoaded === totalAssets) {
+              finishSceneSetup();
+            }
+          }
+        }
+      });
+      
+      // Timeout de sécurité
+      setTimeout(() => {
+        if (assetsLoaded < totalAssets) {
+          console.warn('⚠️ Assets loading timeout, proceeding anyway...');
+          finishSceneSetup();
+        }
+      }, 10000); // 10 secondes timeout
+    }
+
+    function finishSceneSetup() {
+      console.log('🎭 Finishing scene setup...');
+      const scene = document.getElementById('arScene');
+      
+      // Créer le target entity
+      const targetEntity = document.createElement('a-entity');
+      targetEntity.setAttribute('mindar-image-target', 'targetIndex: 0');
+      
+      // Ajouter tous les objets modèles au target
+      objects.forEach((objData, index) => {
+        if (objData.type === 'model') {
+          const modelEntity = document.createElement('a-gltf-model');
+          modelEntity.id = `model_${index}`;
+          modelEntity.setAttribute('src', `#asset_${index}`);
+          
+          // Appliquer les transformations
+          if (objData.position) {
+            modelEntity.setAttribute('position', `${objData.position.x} ${objData.position.y} ${objData.position.z}`);
+          }
+          if (objData.rotation) {
+            const rotation = `${objData.rotation.x * 180 / Math.PI} ${objData.rotation.y * 180 / Math.PI} ${objData.rotation.z * 180 / Math.PI}`;
+            modelEntity.setAttribute('rotation', rotation);
+          }
+          if (objData.scale) {
+            modelEntity.setAttribute('scale', `${objData.scale.x} ${objData.scale.y} ${objData.scale.z}`);
+          }
+          
+          // Ajouter une animation de rotation si souhaité
+          if (objData.name && objData.name.toLowerCase().includes('plant')) {
+            modelEntity.setAttribute('animation', 'property: rotation; to: -90 360 0; loop: true; dur: 8000; easing: linear;');
+          }
+          
+          targetEntity.appendChild(modelEntity);
+          console.log(`✅ Model entity added: ${objData.name}`);
+        }
+      });
+      
+      scene.appendChild(targetEntity);
+      
+      // Configurer les événements AR
+      setupAREvents(targetEntity);
+      
+      // Afficher la scène
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('info').style.display = 'block';
+      scene.style.display = 'block';
+      
+      console.log('🌱 AR Scene ready!');
+    }
+
+    function setupAREvents(targetEntity) {
+      targetEntity.addEventListener('targetFound', function() {
+        console.log('🎯 Target detected!');
+        document.getElementById('infoText').innerHTML = `🌱 ${currentProject.name}<br><strong>Projet AR actif !</strong>`;
+        document.getElementById('info').style.background = 'rgba(76, 175, 80, 0.9)';
+        
+        // Vibration douce
+        if (navigator.vibrate) {
+          navigator.vibrate([200, 100, 200]);
+        }
+      });
+      
+      targetEntity.addEventListener('targetLost', function() {
+        console.log('❌ Target lost');
+        document.getElementById('infoText').innerHTML = '🌻 Pointez vers l\'image cible';
+        document.getElementById('info').style.background = 'rgba(0,0,0,0.9)';
+      });
+    }
+
+    function showError(title, description = '') {
+      document.getElementById('loading').innerHTML = `
+        <div style="color: #f44336; font-size: 24px; margin-bottom: 15px;">❌</div>
+        <div style="font-size: 18px; margin-bottom: 10px;">${title}</div>
+        ${description ? `<div style="font-size: 14px; color: #aaa;">${description}</div>` : ''}
+        <div style="margin-top: 20px;">
+          <button onclick="window.history.back()" style="background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">← Retour</button>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html> 

@@ -274,6 +274,47 @@
             color: #ccc;
         }
 
+        /* SOUS-ONGLETS */
+        .sub-tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #555;
+        }
+
+        .sub-tab {
+            flex: 1;
+            padding: 8px;
+            background: #3d3d3d;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 11px;
+            border-right: 1px solid #555;
+            transition: all 0.3s;
+        }
+
+        .sub-tab:last-child {
+            border-right: none;
+        }
+
+        .sub-tab.active {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .sub-tab:hover:not(.active) {
+            background: #4d4d4d;
+            color: #ccc;
+        }
+
+        .sub-content {
+            display: none;
+        }
+
+        .sub-content.active {
+            display: block;
+        }
+
         /* CONTENU DES ONGLETS */
         .panel-content {
             flex: 1;
@@ -489,6 +530,7 @@
     <div class="header">
         <h1>🌱 Éditeur AR</h1>
         <div class="header-actions">
+            <button class="btn btn-primary" onclick="generateQRCode()">📱 Générer QR</button>
             <button class="btn btn-primary" onclick="exportProjectZIP()">📦 Télécharger ZIP</button>
             <button class="btn btn-secondary" onclick="exportProject()">📄 Export JSON</button>
             <button class="btn btn-secondary" onclick="previewAR()">👁️ Aperçu AR</button>
@@ -563,10 +605,35 @@
                 </div>
                 <div id="objectsContent" style="display: none;">
                     <h3>Objects</h3>
-                    <div class="objects-list" id="objectsList">
-                        <p style="color: #aaa; text-align: center; margin-top: 50px;">
-                            No objects in scene
-                        </p>
+                    
+                    <!-- Sous-onglets -->
+                    <div class="sub-tabs">
+                        <button class="sub-tab active" onclick="switchSubTab('objects')">🎲 Objets</button>
+                        <button class="sub-tab" onclick="switchSubTab('targets')">🎯 Targets</button>
+                    </div>
+                    
+                    <!-- Contenu des objets -->
+                    <div class="sub-content active" id="objectsSubContent">
+                        <div class="objects-list" id="objectsList">
+                            <p style="color: #aaa; text-align: center; margin-top: 50px;">
+                                No objects in scene
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Contenu des targets -->
+                    <div class="sub-content" id="targetsSubContent">
+                        <div style="margin-bottom: 15px; text-align: center;">
+                            <input type="file" id="targetFileInput" accept="image/*" multiple style="display: none;" onchange="handleTargetFileSelect(this.files)">
+                            <button class="btn btn-primary" style="width: 100%; padding: 10px;" onclick="document.getElementById('targetFileInput').click()">
+                                📁 Importer Images Targets
+                            </button>
+                        </div>
+                        <div class="objects-list" id="targetsList">
+                            <p style="color: #aaa; text-align: center; margin-top: 50px;">
+                                No target images<br><small>Add JPG/PNG images to use as AR targets</small>
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -599,6 +666,30 @@
         </div>
     </div>
 
+    <!-- MODAL QR CODE -->
+    <div class="modal hidden" id="qrModal">
+        <div class="modal-content" style="width: 500px;">
+            <h3>🌱 QR Code WebAR</h3>
+            <div style="text-align: center; margin: 20px 0;">
+                <div id="qrContainer" style="display: inline-block; padding: 20px; background: white; border-radius: 8px;">
+                    <!-- QR Code sera généré ici -->
+                </div>
+            </div>
+            <div class="form-group">
+                <label>URL WebAR:</label>
+                <input type="text" id="qrUrl" readonly style="font-size: 12px; color: #aaa;" onclick="this.select()">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="copyQRUrl()">📋 Copier URL</button>
+                <button class="btn btn-secondary" onclick="downloadQRCode()">💾 Télécharger QR</button>
+                <button class="btn btn-primary" onclick="hideQRModal()">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- QRCode.js -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
     <!-- Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
@@ -615,6 +706,8 @@
         let objects = [];
         let currentProject = null;
         let projects = JSON.parse(localStorage.getItem('arProjects')) || [];
+        let targets = []; // Images cibles pour la détection AR
+        let qrCanvas = null; // Canvas pour le QR code
 
         // Initialisation
         init();
@@ -2276,6 +2369,297 @@
                     console.error('Error creating ZIP:', error);
                     updateStatus('❌ Error creating ZIP file');
                 });
+        }
+
+        // ==================== GESTION QR CODE ====================
+        
+        function generateQRCode() {
+            if (!currentProject) {
+                alert('Aucun projet sélectionné');
+                return;
+            }
+
+            // Vérifier qu'il y a des targets ET des objets 3D
+            if (targets.length === 0) {
+                alert('❌ Aucune image cible\n\nAjoutez au moins une image target pour générer un QR code AR.');
+                return;
+            }
+
+            if (objects.length === 0) {
+                alert('❌ Aucun objet 3D\n\nAjoutez au moins un modèle 3D pour générer un QR code AR.');
+                return;
+            }
+
+            // Générer un ID unique et persistant pour le projet
+            if (!currentProject.uniqueUrl) {
+                currentProject.uniqueUrl = generateUniqueProjectId();
+                // Sauvegarder immédiatement l'ID unique
+                if (!currentProject.isTemporary) {
+                    try {
+                        localStorage.setItem('arProjects', JSON.stringify(projects));
+                    } catch (error) {
+                        console.warn('Cannot save unique URL to localStorage:', error);
+                    }
+                }
+            }
+
+            // Construire l'URL WebAR
+            const baseUrl = window.location.origin + window.location.pathname.replace('editor.html', '');
+            const webArUrl = `${baseUrl}viewer.html?project=${currentProject.uniqueUrl}`;
+            
+            // Afficher le modal QR
+            document.getElementById('qrModal').classList.remove('hidden');
+            document.getElementById('qrUrl').textContent = webArUrl;
+            
+            // Fonction pour générer le QR code
+            function generateQR() {
+                const qrContainer = document.getElementById('qrContainer');
+                qrContainer.innerHTML = '<div style="color: #666; padding: 20px;">🔄 Génération du QR code...</div>';
+                
+                try {
+                    // Créer un canvas pour le QR code
+                    const canvas = document.createElement('canvas');
+                    qrContainer.innerHTML = '';
+                    qrContainer.appendChild(canvas);
+                    
+                    QRCode.toCanvas(canvas, webArUrl, {
+                        width: 256,
+                        height: 256,
+                        margin: 2,
+                        color: {
+                            dark: '#000000',
+                            light: '#FFFFFF'
+                        },
+                        errorCorrectionLevel: 'M'
+                    }, function (error) {
+                        if (error) {
+                            console.error('QR generation error:', error);
+                            qrContainer.innerHTML = '<div style="color: #f44336; padding: 20px;">❌ Erreur de génération QR</div>';
+                            updateStatus('❌ Error generating QR code');
+                        } else {
+                            qrCanvas = canvas;
+                            updateStatus(`✅ QR code generated for: ${currentProject.name}`);
+                            console.log('✅ QR Code generated successfully');
+                        }
+                    });
+                } catch (error) {
+                    console.error('QR Code generation failed:', error);
+                    qrContainer.innerHTML = '<div style="color: #f44336; padding: 20px;">❌ Erreur de génération</div>';
+                    updateStatus('❌ QR generation failed');
+                }
+            }
+            
+            // Vérifier si QRCode est disponible et attendre si nécessaire
+            if (typeof QRCode !== 'undefined') {
+                generateQR();
+            } else {
+                console.warn('⚠️ QRCode not ready, waiting...');
+                const qrContainer = document.getElementById('qrContainer');
+                qrContainer.innerHTML = '<div style="color: #ff9800; padding: 20px;">⏳ Chargement de la bibliothèque QR...</div>';
+                
+                // Attendre que QRCode soit disponible
+                let attempts = 0;
+                const maxAttempts = 50; // 5 secondes max
+                const checkInterval = setInterval(() => {
+                    attempts++;
+                    if (typeof QRCode !== 'undefined') {
+                        clearInterval(checkInterval);
+                        console.log('✅ QRCode now available, generating...');
+                        generateQR();
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(checkInterval);
+                        console.error('❌ QRCode library failed to load after timeout');
+                        qrContainer.innerHTML = `
+                            <div style="color: #f44336; padding: 20px; text-align: center;">
+                                ❌ Erreur de chargement<br>
+                                <small style="color: #aaa;">La bibliothèque QR code n'a pas pu se charger.<br>
+                                Vérifiez votre connexion internet et rechargez la page.</small><br>
+                                <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                    🔄 Recharger la page
+                                </button>
+                            </div>
+                        `;
+                        updateStatus('❌ QR library failed to load');
+                    }
+                }, 100); // Vérifier toutes les 100ms
+            }
+        }
+
+        function generateUniqueProjectId() {
+            // Créer un ID unique basé sur le timestamp et un hash simple
+            const timestamp = Date.now();
+            const random = Math.random().toString(36).substr(2, 9);
+            return `${timestamp}_${random}`;
+        }
+
+        function hideQRModal() {
+            document.getElementById('qrModal').classList.add('hidden');
+        }
+
+        function copyQRUrl() {
+            const url = document.getElementById('qrUrl').textContent;
+            navigator.clipboard.writeText(url).then(() => {
+                updateStatus('✅ URL copied to clipboard');
+            }).catch(() => {
+                // Fallback pour les navigateurs plus anciens
+                const textArea = document.createElement('textarea');
+                textArea.value = url;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                updateStatus('✅ URL copied to clipboard');
+            });
+        }
+
+        function downloadQRCode() {
+            if (!qrCanvas) {
+                updateStatus('❌ No QR code to download');
+                return;
+            }
+            
+            const link = document.createElement('a');
+            link.download = `QR_${currentProject.name}_${Date.now()}.png`;
+            link.href = qrCanvas.toDataURL();
+            link.click();
+            updateStatus('✅ QR code downloaded');
+        }
+
+        // ==================== GESTION DES SOUS-ONGLETS ====================
+        
+        function switchSubTab(subTab) {
+            const objectsSubContent = document.getElementById('objectsSubContent');
+            const targetsSubContent = document.getElementById('targetsSubContent');
+            const subTabs = document.querySelectorAll('.sub-tab');
+            
+            // Mettre à jour l'affichage
+            if (subTab === 'objects') {
+                objectsSubContent.classList.add('active');
+                targetsSubContent.classList.remove('active');
+                subTabs[0].classList.add('active');
+                subTabs[1].classList.remove('active');
+                updateObjectsList();
+            } else if (subTab === 'targets') {
+                objectsSubContent.classList.remove('active');
+                targetsSubContent.classList.add('active');
+                subTabs[0].classList.remove('active');
+                subTabs[1].classList.add('active');
+                updateTargetsList();
+            }
+        }
+
+        function updateTargetsList() {
+            const container = document.getElementById('targetsList');
+            
+            if (targets.length === 0) {
+                container.innerHTML = '<p style="color: #aaa; text-align: center; margin-top: 50px;">No target images<br><small>Add JPG/PNG images to use as AR targets</small></p>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            targets.forEach((target, index) => {
+                const item = document.createElement('div');
+                item.className = 'object-item';
+                
+                item.innerHTML = `
+                    <div class="object-info" onclick="selectTargetFromList(${index})">
+                        <div class="object-name">🎯 ${target.name}</div>
+                        <div class="object-type">Target Image • ${target.size || 'Unknown size'}</div>
+                    </div>
+                    <div class="object-actions">
+                        <button class="object-rename-btn" onclick="renameTarget(${index})" title="Rename">✏️</button>
+                        <button class="object-delete-btn" onclick="deleteTargetFromList(${index})" title="Delete">🗑️</button>
+                    </div>
+                `;
+                
+                container.appendChild(item);
+            });
+        }
+
+        function selectTargetFromList(index) {
+            if (index >= 0 && index < targets.length) {
+                const target = targets[index];
+                updateStatus(`Selected target: ${target.name}`);
+                // TODO: Afficher un aperçu de l'image target
+            }
+        }
+
+        function renameTarget(index) {
+            if (index >= 0 && index < targets.length) {
+                const target = targets[index];
+                const newName = prompt('New target name:', target.name);
+                if (newName && newName.trim()) {
+                    target.name = newName.trim();
+                    updateTargetsList();
+                    updateStatus(`Target renamed to: ${newName}`);
+                    
+                    // Sauvegarder si on est dans un projet
+                    if (currentProject) {
+                        saveCurrentProject();
+                    }
+                }
+            }
+        }
+
+        function deleteTargetFromList(index) {
+            if (index >= 0 && index < targets.length) {
+                const target = targets[index];
+                if (confirm(`Delete target "${target.name}"?`)) {
+                    targets.splice(index, 1);
+                    updateTargetsList();
+                    updateStatus(`Target deleted: ${target.name}`);
+                    
+                    // Sauvegarder si on est dans un projet
+                    if (currentProject) {
+                        saveCurrentProject();
+                    }
+                }
+            }
+        }
+
+        // ==================== GESTION DES TARGETS ====================
+        
+        function addImageAsTarget(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const target = {
+                    name: file.name.replace(/\.[^/.]+$/, ""), // Nom sans extension
+                    imageData: e.target.result,
+                    size: (file.size / 1024).toFixed(1) + ' KB',
+                    added: new Date().toLocaleDateString()
+                };
+                
+                targets.push(target);
+                updateStatus(`✅ Target added: ${target.name}`);
+                
+                // Si on est dans l'onglet targets, mettre à jour la liste
+                const targetsSubContent = document.getElementById('targetsSubContent');
+                if (targetsSubContent.classList.contains('active')) {
+                    updateTargetsList();
+                }
+                
+                // Sauvegarder dans le projet actuel
+                if (currentProject) {
+                    saveCurrentProject();
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleTargetFileSelect(files) {
+            if (!files || files.length === 0) return;
+            
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    addImageAsTarget(file);
+                } else {
+                    updateStatus(`❌ ${file.name} n'est pas une image valide`);
+                }
+            });
+            
+            // Réinitialiser l'input file
+            document.getElementById('targetFileInput').value = '';
         }
     </script>
 </body>
