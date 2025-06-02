@@ -23,3 +23,33 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# ====== PROJET AR QR - ENVOI PROFESSIONNEL ======
+
+# Archives de développement (gardées localement)
+docs/archives/
+
+# Certificats de test SSL
+*.pem
+*.crt
+*.key
+
+# Cache Python
+__pycache__/
+*.pyc
+
+# Sauvegardes temporaires
+*.backup
+*.bak
+
+# ====== POUR RÉFÉRENCES (commenté) ======
+# Si vous voulez inclure des fichiers spécifiques, décommentez :
+# !docs/archives/GUIDE_QR_AR_SYSTEM.md     # Guide principal
+# !docs/archives/RESUME_FINAL_FONCTIONNALITES.md  # Résumé final
+
+# ====== NOTES POUR LA PROFESSIONNELLE ======
+# Ce projet contient :
+# - Application AR QR fonctionnelle (ar-target-qr-generator.html)
+# - Viewer AR (ar-viewer.html) 
+# - Documentation principale (README.md)
+# - Archives de développement dans docs/archives/ (ignorées)

@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur QR AR - Target Images</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .section {
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .section h2 {
+            color: #1e293b;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-area {
+            border: 3px dashed #cbd5e1;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: white;
+        }
+
+        .upload-area:hover {
+            border-color: #4f46e5;
+            background: #f8fafc;
+        }
+
+        .upload-area.dragover {
+            border-color: #4f46e5;
+            background: #eef2ff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #64748b;
+        }
+
+        .upload-text {
+            color: #475569;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .target-preview {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .target-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .target-info {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .qr-output {
+            text-align: center;
+        }
+
+        .qr-canvas {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            margin: 20px 0;
+        }
+
+        .url-display {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            word-break: break-all;
+            cursor: pointer;
+        }
+
+        .url-display:hover {
+            border-color: #4f46e5;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .status.error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .status.info {
+            background: #eff6ff;
+            color: #2563eb;
+            border: 1px solid #bfdbfe;
+        }
+
+        .feature-list {
+            list-style: none;
+            margin-top: 15px;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feature-list li::before {
+            content: "✅";
+            font-size: 1.2rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .qr-options {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid #e2e8f0;
+        }
+
+        .qr-options h3 {
+            margin-bottom: 15px;
+            color: #1e293b;
+            font-size: 1.2rem;
+        }
+
+        .option-group {
+            margin-bottom: 20px;
+        }
+
+        .option-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .option-select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .option-select:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .option-select.changed {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .option-select.changed:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .option-group small {
+            display: block;
+            margin-top: 5px;
+            color: #6b7280;
+            font-size: 0.85rem;
+            font-style: italic;
+        }
+
+        .qr-info {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: left;
+        }
+
+        .qr-info p {
+            margin: 0;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 10px 25px rgba(107, 114, 128, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Générateur QR AR</h1>
+            <p>Créez des QR codes pour vos images targets AR avec AR.js</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Section 1: Import Image Target -->
+            <div class="section">
+                <h2>📸 1. Importer Image Target</h2>
+                
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">
+                        Glissez votre image target ici<br>
+                        ou cliquez pour sélectionner
+                    </div>
+                    <input type="file" id="fileInput" class="file-input" accept="image/*">
+                    <button class="btn" onclick="document.getElementById('fileInput').click()">
+                        📎 Choisir une image
+                    </button>
+                </div>
+
+                <div id="targetPreview" class="target-preview hidden">
+                    <img id="targetImage" class="target-image" alt="Target Image">
+                    <div class="target-info">
+                        <h3 id="targetName">Nom du fichier</h3>
+                        <p id="targetDetails">Détails de l'image</p>
+                    </div>
+                </div>
+
+                <div class="feature-list">
+                    <h3>Formats supportés :</h3>
+                    <li>Images JPG/JPEG</li>
+                    <li>Images PNG</li>
+                    <li>Images WebP</li>
+                    <li>Résolution optimale : 1024x1024px</li>
+                </div>
+            </div>
+
+            <!-- Section 2: Configuration AR & QR -->
+            <div class="section">
+                <h2>🚀 2. Générer QR Code AR</h2>
+                
+                <div id="arConfig" class="hidden">
+                    <p class="status info">
+                        <strong>Configuration AR.js détectée :</strong><br>
+                        Votre image sera utilisée comme marker AR
+                    </p>
+                    
+                    <!-- Options QR Code -->
+                    <div class="qr-options">
+                        <h3>⚙️ Options QR Code :</h3>
+                        
+                        <div class="option-group">
+                            <label for="errorCorrection">🛡️ Niveau de correction d'erreur :</label>
+                            <select id="errorCorrection" class="option-select">
+                                <option value="LOW">Faible (7% - QR plus simple)</option>
+                                <option value="MEDIUM" selected>Moyen (15% - Recommandé)</option>
+                                <option value="QUARTILE">Élevé (25% - Plus robuste)</option>
+                                <option value="HIGH">Maximum (30% - QR plus complexe)</option>
+                            </select>
+                            <small>Plus le niveau est élevé, plus le QR code résiste aux dommages mais devient plus dense</small>
+                        </div>
+                        
+                        <div class="option-group">
+                            <label for="qrSize">📏 Taille des modules :</label>
+                            <select id="qrSize" class="option-select">
+                                <option value="4">Très petit (4px - QR compact)</option>
+                                <option value="6">Petit (6px)</option>
+                                <option value="8" selected>Moyen (8px - Recommandé)</option>
+                                <option value="10">Grand (10px)</option>
+                                <option value="12">Très grand (12px - QR lisible)</option>
+                            </select>
+                            <small>Contrôle la taille finale du QR code</small>
+                        </div>
+                        
+                        <div class="option-group">
+                            <label for="qrBorder">🖼️ Bordure :</label>
+                            <select id="qrBorder" class="option-select">
+                                <option value="2">Minimale (2px)</option>
+                                <option value="4" selected>Standard (4px)</option>
+                                <option value="6">Large (6px)</option>
+                                <option value="8">Très large (8px)</option>
+                            </select>
+                            <small>Espace blanc autour du QR code</small>
+                        </div>
+                    </div>
+                    
+                    <button class="btn" id="generateBtn" onclick="generateARQR()" disabled>
+                        🎯 Générer QR Code AR
+                    </button>
+                </div>
+
+                <div id="qrOutput" class="qr-output hidden">
+                    <h3>QR Code généré :</h3>
+                    <canvas id="qrCanvas" class="qr-canvas"></canvas>
+                    
+                    <div class="qr-info">
+                        <p id="qrDetails">Détails du QR code</p>
+                    </div>
+                    
+                    <div class="url-display" id="urlDisplay" onclick="copyToClipboard()">
+                        Cliquez pour copier l'URL
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button class="btn" onclick="downloadQR()">
+                            💾 Télécharger QR
+                        </button>
+                        <button class="btn" onclick="testARViewer()">
+                            🔍 Tester AR
+                        </button>
+                        <button class="btn btn-secondary" onclick="regenerateQR()">
+                            🔄 Régénérer
+                        </button>
+                    </div>
+                </div>
+
+                <div id="statusMessage" class="status info">
+                    Importez d'abord une image target pour commencer
+                </div>
+
+                <div class="feature-list">
+                    <h3>Fonctionnalités :</h3>
+                    <li>URL unique et stable</li>
+                    <li>Compatible AR.js</li>
+                    <li>Détection automatique</li>
+                    <li>QR code haute qualité</li>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="qrcodegen-custom.js"></script>
+    <script>
+        // Variables globales
+        let currentTarget = null;
+        let targetId = null;
+        let qrCanvas = null;
+        let qrLibLoaded = false;
+        
+        // Configuration
+        const baseUrl = window.location.origin + window.location.pathname.replace('ar-target-qr-generator.html', '');
+        
+        // Fonction pour dessiner un QR code avec qrcodegen.js
+        function drawQRCodeWithLocal(canvas, text) {
+            console.log('🔧 drawQRCodeWithLocal appelée avec:', text);
+            console.log('🔧 qrcodegen disponible:', typeof qrcodegen, qrcodegen);
+            
+            if (typeof qrcodegen === 'undefined' || !qrcodegen.QrCode) {
+                console.error('❌ qrcodegen non disponible !');
+                updateStatus('error', 'Erreur : qrcodegen non disponible');
+                return false;
+            }
+            
+            try {
+                // Récupérer les options de l'interface
+                const errorLevel = document.getElementById('errorCorrection').value;
+                const scale = parseInt(document.getElementById('qrSize').value);
+                const border = parseInt(document.getElementById('qrBorder').value);
+                
+                console.log('🔧 Options:', { errorLevel, scale, border });
+                
+                // Mapper les niveaux de correction d'erreur
+                let eccLevel;
+                switch(errorLevel) {
+                    case 'LOW': eccLevel = qrcodegen.Ecc.LOW; break;
+                    case 'MEDIUM': eccLevel = qrcodegen.Ecc.MEDIUM; break;
+                    case 'QUARTILE': eccLevel = qrcodegen.Ecc.QUARTILE; break;
+                    case 'HIGH': eccLevel = qrcodegen.Ecc.HIGH; break;
+                    default: eccLevel = qrcodegen.Ecc.MEDIUM;
+                }
+                
+                console.log('🔧 Niveau ECC:', eccLevel);
+                
+                // Créer des QR codes TRÈS différents selon le niveau
+                let qrText;
+                
+                switch(errorLevel) {
+                    case 'LOW':
+                        // QR TRÈS SIMPLE - URL courte seulement
+                        qrText = text.replace('ar-viewer.html?target=', 'ar?t=');
+                        break;
+                        
+                    case 'MEDIUM':
+                        // QR MOYEN - URL normale + quelques paramètres
+                        qrText = text + '&q=med&v=2&ts=' + Date.now().toString().slice(-6);
+                        break;
+                        
+                    case 'QUARTILE':
+                        // QR COMPLEXE - Beaucoup de données
+                        const extraData = '&quality=high&mode=advanced&session=' + Math.random().toString(36).substr(2, 15) + 
+                                        '&timestamp=' + Date.now() + 
+                                        '&user=demo&lang=fr&platform=web&version=2.1&device=desktop';
+                        qrText = text + extraData;
+                        break;
+                        
+                    case 'HIGH':
+                        // QR TRÈS COMPLEXE - ÉNORMÉMENT de données pour maximiser la densité
+                        const hugeData = '&quality=maximum&mode=professional&session=' + Math.random().toString(36).substr(2, 20) + 
+                                       '&timestamp=' + Date.now() + 
+                                       '&user=demonstration_user&language=francais&platform=web_browser&version=2.1.5' +
+                                       '&device=desktop_computer&resolution=1920x1080&browser=safari&os=macos' +
+                                       '&ref=ar_generator&campaign=test&source=manual&medium=qr_code' +
+                                       '&complexity=maximum&density=high&modules=extra&pattern=dense' +
+                                       '&checksum=' + Math.random().toString(36).substr(2, 10) +
+                                       '&validation=' + Math.random().toString(36).substr(2, 12) +
+                                       '&security_token=' + Math.random().toString(36).substr(2, 16) +
+                                       '&extra_padding_for_maximum_complexity_and_visual_density=' + Date.now().toString(36);
+                        qrText = text + hugeData;
+                        break;
+                        
+                    default:
+                        qrText = text;
+                }
+                
+                console.log('📊 Génération QR avec texte:', qrText);
+                console.log('📊 Longueur du texte:', qrText.length, 'caractères');
+                console.log('📊 Niveau de correction:', errorLevel);
+                
+                // Utiliser qrcodegen.js
+                console.log('🚀 Appel qrcodegen.QrCode.encodeText...');
+                const qr = qrcodegen.QrCode.encodeText(qrText, eccLevel);
+                console.log('✅ QR Code créé:', qr);
+                
+                const size = qr.size;
+                const realSize = (size + border * 2) * scale;
+                
+                canvas.width = realSize;
+                canvas.height = realSize;
+                
+                const ctx = canvas.getContext('2d');
+                
+                // Fond blanc
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, realSize, realSize);
+                
+                // Modules noirs
+                ctx.fillStyle = '#000000';
+                let blackModules = 0;
+                for (let y = 0; y < size; y++) {
+                    for (let x = 0; x < size; x++) {
+                        if (qr.getModule(x, y)) {
+                            blackModules++;
+                            ctx.fillRect(
+                                (x + border) * scale,
+                                (y + border) * scale,
+                                scale,
+                                scale
+                            );
+                        }
+                    }
+                }
+                
+                // Calculer la densité
+                const totalModules = size * size;
+                const density = ((blackModules / totalModules) * 100).toFixed(1);
+                
+                console.log(`✅ QR généré: ${size}x${size}, ${blackModules} modules noirs (${density}%)`);
+                
+                // Afficher les détails du QR code
+                const qrDetails = document.getElementById('qrDetails');
+                qrDetails.innerHTML = `
+                    <strong>📊 Détails du QR Code :</strong><br>
+                    • Matrice: ${size}x${size} modules (${totalModules} total)<br>
+                    • 🔲 Modules noirs: <strong>${blackModules}</strong> (${density}% de densité)<br>
+                    • 📝 Données: ${qrText.length} caractères<br>
+                    • 🛡️ Correction: ${errorLevel} (${getErrorDescription(errorLevel)})<br>
+                    • 📏 Échelle: ${scale}px par module<br>
+                    • 🖼️ Bordure: ${border}px<br>
+                    • 📐 Dimensions: ${realSize}x${realSize}px<br>
+                    • 🎯 Complexité: ${getComplexityDescription(errorLevel)}
+                `;
+                
+                return true;
+            } catch (error) {
+                console.error('❌ Erreur qrcodegen:', error);
+                updateStatus('error', 'Erreur génération QR: ' + error.message);
+                return false;
+            }
+        }
+        
+        function getErrorDescription(level) {
+            switch(level) {
+                case 'LOW': return '~7% récupérable';
+                case 'MEDIUM': return '~15% récupérable';
+                case 'QUARTILE': return '~25% récupérable';
+                case 'HIGH': return '~30% récupérable';
+                default: return 'Niveau moyen';
+            }
+        }
+
+        function getComplexityDescription(level) {
+            switch(level) {
+                case 'LOW': return '🟢 SIMPLE (URL courte)';
+                case 'MEDIUM': return '🟡 MOYEN (+ paramètres)';
+                case 'QUARTILE': return '🟠 COMPLEXE (+ métadonnées)';
+                case 'HIGH': return '🔴 TRÈS DENSE (+ énormes données)';
+                default: return 'Standard';
+            }
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            setupDragAndDrop();
+            setupFileInput();
+            updateStatus('info', 'Prêt à importer une image target');
+            
+            // Vérifier que qrcodegen est chargé
+            setTimeout(function() {
+                if (typeof qrcodegen !== 'undefined' && qrcodegen.QrCode) {
+                    console.log('✅ qrcodegen.js local chargé avec succès');
+                    qrLibLoaded = true;
+                } else {
+                    console.warn('⚠️ qrcodegen.js non disponible, using basic fallback');
+                    qrLibLoaded = true;
+                }
+                
+                // ATTACHER LES ÉVÉNEMENTS ICI après que tout soit chargé
+                setupQROptionsEvents();
+            }, 500);
+        });
+
+        function setupDragAndDrop() {
+            const uploadArea = document.getElementById('uploadArea');
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight(e) {
+                uploadArea.classList.add('dragover');
+            }
+
+            function unhighlight(e) {
+                uploadArea.classList.remove('dragover');
+            }
+
+            uploadArea.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            }
+        }
+
+        function setupFileInput() {
+            document.getElementById('fileInput').addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+        }
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                updateStatus('error', 'Veuillez sélectionner une image valide (JPG, PNG, WebP)');
+                return;
+            }
+
+            updateStatus('info', 'Traitement de l\'image...');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentTarget = {
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    data: e.target.result,
+                    width: 0,
+                    height: 0
+                };
+                
+                // Créer une image pour obtenir les dimensions
+                const img = new Image();
+                img.onload = function() {
+                    currentTarget.width = img.width;
+                    currentTarget.height = img.height;
+                    
+                    displayTargetPreview();
+                    setupARConfiguration();
+                };
+                img.src = e.target.result;
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        function displayTargetPreview() {
+            const preview = document.getElementById('targetPreview');
+            const image = document.getElementById('targetImage');
+            const name = document.getElementById('targetName');
+            const details = document.getElementById('targetDetails');
+            
+            image.src = currentTarget.data;
+            name.textContent = currentTarget.name;
+            details.innerHTML = `
+                Taille: ${currentTarget.width}x${currentTarget.height}px<br>
+                Poids: ${(currentTarget.size / 1024).toFixed(1)} KB<br>
+                Format: ${currentTarget.type}
+            `;
+            
+            preview.classList.remove('hidden');
+            updateStatus('success', 'Image target chargée avec succès !');
+        }
+
+        function setupARConfiguration() {
+            const arConfig = document.getElementById('arConfig');
+            const generateBtn = document.getElementById('generateBtn');
+            
+            // Générer un ID unique pour cette target
+            targetId = generateUniqueId();
+            
+            arConfig.classList.remove('hidden');
+            generateBtn.disabled = false;
+            
+            updateStatus('success', 'Configuration AR prête. Vous pouvez générer le QR code !');
+        }
+
+        function generateUniqueId() {
+            const timestamp = Date.now();
+            const random = Math.random().toString(36).substr(2, 9);
+            return `target_${timestamp}_${random}`;
+        }
+
+        function generateARQR() {
+            if (!currentTarget || !targetId) {
+                updateStatus('error', 'Aucune image target disponible');
+                return;
+            }
+
+            updateStatus('info', '🔄 Génération du QR code...');
+
+            try {
+                // Sauvegarder la target dans localStorage avec l'ID unique
+                saveTargetToStorage();
+                
+                // Récupérer les options AVANT de construire l'URL
+                const errorLevel = document.getElementById('errorCorrection').value;
+                const scale = parseInt(document.getElementById('qrSize').value);
+                const border = parseInt(document.getElementById('qrBorder').value);
+                
+                // Construire l'URL AR de base
+                const baseArUrl = `${baseUrl}ar-viewer.html?target=${targetId}`;
+                console.log('🎯 URL de base:', baseArUrl);
+                
+                // Générer le QR code avec qrcodegen.js
+                const canvas = document.getElementById('qrCanvas');
+                
+                if (drawQRCodeWithLocal(canvas, baseArUrl)) {
+                    // Succès avec qrcodegen
+                    document.getElementById('urlDisplay').textContent = baseArUrl;
+                    document.getElementById('qrOutput').classList.remove('hidden');
+                    
+                    qrCanvas = canvas;
+                    updateStatus('success', `✅ QR Code AR généré ! Mode: ${errorLevel}`);
+                    console.log('✅ QR Code généré avec succès');
+                } else {
+                    throw new Error('Échec de la génération QR');
+                }
+                
+            } catch (error) {
+                console.error('❌ Erreur génération QR:', error);
+                updateStatus('error', 'Erreur lors de la génération du QR code: ' + error.message);
+            }
+        }
+
+        function saveTargetToStorage() {
+            try {
+                const targetData = {
+                    id: targetId,
+                    name: currentTarget.name,
+                    data: currentTarget.data,
+                    width: currentTarget.width,
+                    height: currentTarget.height,
+                    created: new Date().toISOString()
+                };
+                
+                localStorage.setItem(`ar_target_${targetId}`, JSON.stringify(targetData));
+                console.log('Target sauvegardée:', targetId);
+                
+            } catch (error) {
+                console.error('Erreur sauvegarde target:', error);
+                // Essayer de nettoyer le localStorage si plein
+                cleanupOldTargets();
+                // Réessayer
+                try {
+                    localStorage.setItem(`ar_target_${targetId}`, JSON.stringify(targetData));
+                } catch (retryError) {
+                    throw new Error('Impossible de sauvegarder la target');
+                }
+            }
+        }
+
+        function cleanupOldTargets() {
+            const keys = Object.keys(localStorage).filter(key => key.startsWith('ar_target_'));
+            if (keys.length > 10) {
+                // Garder seulement les 10 plus récents
+                keys.splice(0, keys.length - 10).forEach(key => {
+                    localStorage.removeItem(key);
+                });
+            }
+        }
+
+        function copyToClipboard() {
+            const url = document.getElementById('urlDisplay').textContent;
+            navigator.clipboard.writeText(url).then(() => {
+                updateStatus('success', 'URL copiée dans le presse-papiers !');
+            }).catch(() => {
+                // Fallback pour navigateurs plus anciens
+                const textArea = document.createElement('textarea');
+                textArea.value = url;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                updateStatus('success', 'URL copiée dans le presse-papiers !');
+            });
+        }
+
+        function downloadQR() {
+            if (!qrCanvas) {
+                updateStatus('error', 'Aucun QR code à télécharger');
+                return;
+            }
+            
+            const link = document.createElement('a');
+            link.download = `QR_AR_${currentTarget.name}_${Date.now()}.png`;
+            link.href = qrCanvas.toDataURL();
+            link.click();
+            
+            updateStatus('success', 'QR code téléchargé !');
+        }
+
+        function testARViewer() {
+            const url = document.getElementById('urlDisplay').textContent;
+            window.open(url, '_blank');
+        }
+
+        function updateStatus(type, message) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.className = `status ${type}`;
+            statusEl.textContent = message;
+        }
+
+        function setupQROptionsEvents() {
+            const errorCorrection = document.getElementById('errorCorrection');
+            const qrSize = document.getElementById('qrSize');
+            const qrBorder = document.getElementById('qrBorder');
+            
+            if (errorCorrection && qrSize && qrBorder) {
+                console.log('🔧 Attachement des événements QR...');
+                
+                errorCorrection.addEventListener('change', function() {
+                    console.log('🔄 Changement correction:', this.value);
+                    regenerateIfQRExists();
+                });
+                
+                qrSize.addEventListener('change', function() {
+                    console.log('🔄 Changement taille:', this.value);
+                    regenerateIfQRExists();
+                });
+                
+                qrBorder.addEventListener('change', function() {
+                    console.log('🔄 Changement bordure:', this.value);
+                    regenerateIfQRExists();
+                });
+                
+                console.log('✅ Événements QR attachés !');
+            } else {
+                console.error('❌ Impossible de trouver les éléments QR');
+            }
+        }
+
+        function regenerateIfQRExists() {
+            const qrOutput = document.getElementById('qrOutput');
+            if (qrOutput && !qrOutput.classList.contains('hidden') && currentTarget && targetId) {
+                console.log('🚀 Régénération automatique du QR...');
+                updateStatus('info', '🔄 Mise à jour du QR code...');
+                setTimeout(() => generateARQR(), 100);
+            }
+        }
+
+        function regenerateQR() {
+            if (!currentTarget || !targetId) {
+                updateStatus('error', 'Aucune image target disponible');
+                return;
+            }
+            
+            updateStatus('info', '🔄 Régénération du QR code avec les paramètres actuels...');
+            
+            // Retirer les indicateurs de changement
+            const selects = ['errorCorrection', 'qrSize', 'qrBorder'];
+            selects.forEach(id => {
+                document.getElementById(id).classList.remove('changed');
+            });
+            
+            generateARQR();
+        }
+    </script>
+</body>
+</html> 
