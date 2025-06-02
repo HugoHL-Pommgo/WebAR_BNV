@@ -1,140 +1,196 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>WebAR - Plante 3D sur Fleur</title>
-  
-  <!-- MindAR + A-Frame -->
-  <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
-
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      font-family: Arial, sans-serif;
-    }
-    
-    a-scene {
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100vw !important;
-      height: 100vh !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      z-index: 1;
-    }
-    
-    canvas {
-      transform: scaleX(-1) !important;
-    }
-    
-    video {
-      transform: scaleX(-1) !important;
-    }
-    
-    #info {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.9);
-      color: white;
-      padding: 15px 25px;
-      border-radius: 10px;
-      text-align: center;
-      z-index: 998;
-      font-size: 16px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 AR Projects Hub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header {
+            margin-bottom: 60px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .projects-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 60px;
+        }
+        
+        .project-card {
+            background: white;
+            border-radius: 25px;
+            padding: 50px 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            border: 3px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .project-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+            border-color: #667eea;
+        }
+        
+        .project-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .project-icon {
+            font-size: 4rem;
+            margin-bottom: 25px;
+            display: block;
+        }
+        
+        .project-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .project-description {
+            font-size: 1.1rem;
+            opacity: 0.7;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .project-tech {
+            font-size: 0.9rem;
+            color: #667eea;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* Couleurs spécifiques pour chaque projet */
+        .project-card:nth-child(1) .project-icon {
+            color: #4CAF50;
+        }
+        
+        .project-card:nth-child(2) .project-icon {
+            color: #FF6B6B;
+        }
+        
+        .project-card:nth-child(3) .project-icon {
+            color: #45B7D1;
+        }
+        
+        .footer {
+            color: white;
+            opacity: 0.8;
+            font-size: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .projects-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .project-card {
+                padding: 40px 25px;
+            }
+            
+            .project-icon {
+                font-size: 3rem;
+            }
+            
+            .project-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
 </head>
 <body>
-  
-  <div id="info">
-    🌻 Pointez vers l'image de fleur jaune<br>
-    <a href="flower-target.html" style="color: #4CAF50;">📄 Voir l'image cible</a>
-  </div>
-
-  <a-scene 
-    embedded
-    mindar-image="imageTargetSrc: ./assets/targets.mind; maxTrack: 1; showStats: false; uiLoading: no; uiScanning: no; uiError: no; filterMinCF: 0.0001; filterBeta: 0.001; warmupTolerance: 5; missTolerance: 5;"
-    renderer="logarithmicDepthBuffer: true; colorManagement: true; physicallyCorrectLights: true; alpha: true;"
-    vr-mode-ui="enabled: false"
-    loading-screen="enabled: false">
-    
-    <a-assets>
-      <a-asset-item id="plantAsset" src="./assets/topfpflanze_final.glb"></a-asset-item>
-    </a-assets>
-    
-    <!-- Éclairage optimisé pour la plante -->
-    <a-light type="ambient" color="#ffffff" intensity="1.2"></a-light>
-    <a-light type="directional" position="5 10 5" color="#ffffff" intensity="2"></a-light>
-    <a-light type="point" position="0 3 2" color="#ffffff" intensity="1.5"></a-light>
-    
-    <!-- Caméra -->
-    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-    
-    <!-- TARGET FLEUR -->
-    <a-entity mindar-image-target="targetIndex: 0">
-      
-      <!-- VOTRE PLANTE 3D - SEUL ÉLÉMENT VISIBLE -->
-      <a-gltf-model
-        id="plantModel"
-        src="#plantAsset"
-        position="0 0 0"
-        rotation="-90 0 0"
-        scale="1.2 1.2 1.2"
-        animation="property: rotation; to: -90 360 0; loop: true; dur: 8000; easing: linear;">
-      </a-gltf-model>
-      
-    </a-entity>
-    
-  </a-scene>
-
-  <script>
-    console.log('🌱 WebAR - Plante 3D Pure');
-    console.log('📁 Modèle: ./assets/topfpflanze_final.glb');
-    console.log('🎯 Target: ./assets/targets.mind (fleur)');
-    
-    setTimeout(() => {
-      const target = document.querySelector('[mindar-image-target]');
-      const plant = document.querySelector('#plantModel');
-      
-      console.log('Target trouvé:', target);
-      console.log('Plante trouvée:', plant);
-      
-      if (target) {
-        target.addEventListener('targetFound', function() {
-          console.log('🌻 FLEUR DÉTECTÉE - Plante 3D visible !');
-          document.getElementById('info').innerHTML = '🌱 PLANTE 3D ACTIVE !<br><strong>Bougez l\'image pour voir l\'effet</strong>';
-          document.getElementById('info').style.background = 'rgba(76, 175, 80, 0.9)';
-          
-          // Vibration douce
-          if (navigator.vibrate) {
-            navigator.vibrate([200, 100, 200]);
-          }
-        });
+    <div class="container">
+        <div class="header">
+            <h1>🎯 AR Projects Hub</h1>
+            <p>Plateforme de réalité augmentée avec détection d'images et génération QR</p>
+        </div>
         
-        target.addEventListener('targetLost', function() {
-          console.log('❌ Fleur perdue');
-          document.getElementById('info').innerHTML = '🌻 Pointez vers l\'image de fleur jaune<br><a href="flower-target.html" style="color: #4CAF50;">📄 Voir l\'image cible</a>';
-          document.getElementById('info').style.background = 'rgba(0,0,0,0.9)';
-        });
+        <div class="projects-grid">
+            <!-- Editor - À gauche -->
+            <a href="editor.html" target="_blank" class="project-card">
+                <span class="project-icon">✏️</span>
+                <h2 class="project-title">Editor</h2>
+                <p class="project-description">Éditeur complet pour créer et gérer des projets de réalité augmentée avancés</p>
+                <div class="project-tech">Editor • Multi-objets • Export</div>
+            </a>
+            
+            <!-- QR Generator - Au centre -->
+            <a href="ar-target-qr-generator.html" target="_blank" class="project-card">
+                <span class="project-icon">📱</span>
+                <h2 class="project-title">QR Generator</h2>
+                <p class="project-description">Générateur de QR codes pour réalité augmentée avec gestion d'images cibles personnalisées</p>
+                <div class="project-tech">QR Codes • AR.js • WebAR</div>
+            </a>
+            
+            <!-- MindAR - À droite -->
+            <a href="ar-mindar-demo.html" target="_blank" class="project-card">
+                <span class="project-icon">🧠</span>
+                <h2 class="project-title">MindAR</h2>
+                <p class="project-description">Détection d'image ultra-fiable avec intelligence artificielle et modèles 3D interactifs</p>
+                <div class="project-tech">MindAR • A-Frame • IA</div>
+            </a>
+        </div>
         
-        console.log('✅ AR configuré pour plante 3D uniquement');
-      }
-    }, 2000);
-  </script>
+        <div class="footer">
+            <p>🚀 Technologies : A-Frame, AR.js, MindAR, WebXR</p>
+        </div>
+    </div>
 </body>
 </html>

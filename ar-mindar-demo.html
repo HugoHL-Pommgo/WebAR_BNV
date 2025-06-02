@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>🧠 AR MindAR - Détection d'Image Moderne</title>
+    
+    <!-- MindAR + A-Frame (versions testées qui marchent) -->
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        
+        /* Mirroring de la caméra */
+        canvas {
+            transform: scaleX(-1) !important;
+        }
+        
+        video {
+            transform: scaleX(-1) !important;
+        }
+        
+        #info {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 998;
+            font-size: 16px;
+        }
+        
+        #target-link {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            z-index: 998;
+            font-size: 14px;
+        }
+        
+        #back-link {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            z-index: 998;
+            font-size: 14px;
+        }
+        
+        /* Guide visuel pour l'image target */
+        #target-guide {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            height: 300px;
+            background: url('assets/quatre-sortes-fleurs-jaunes_1308-2129.jpg') center/contain no-repeat;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 3px dashed #4CAF50;
+            border-radius: 15px;
+            opacity: 0.4;
+            z-index: 997;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+        }
+        
+        #target-guide.hidden {
+            opacity: 0;
+        }
+        
+        #target-guide::before {
+            content: "🌻 Pointez vers cette image";
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(76, 175, 80, 0.95);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 700;
+            white-space: nowrap;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        #target-guide::after {
+            content: "Image complète des fleurs jaunes";
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <a href="index.html" id="back-link">← Accueil</a>
+    <a href="assets/quatre-sortes-fleurs-jaunes_1308-2129.jpg" target="_blank" id="target-link">🌸 Image Cible</a>
+
+    <!-- Guide visuel pour aider les utilisateurs -->
+    <div id="target-guide"></div>
+
+    <!-- Informations -->
+    <div id="info">
+        🌻 Pointez vers l'image de fleur jaune<br>
+        <a href="assets/quatre-sortes-fleurs-jaunes_1308-2129.jpg" target="_blank" style="color: #4CAF50;">📄 Voir l'image cible</a>
+    </div>
+
+    <!-- Scène AR avec MindAR (configuration exacte qui marche) -->
+    <a-scene 
+        embedded
+        mindar-image="imageTargetSrc: assets/targets.mind; maxTrack: 1; showStats: false; uiLoading: no; uiScanning: no; uiError: no; filterMinCF: 0.0001; filterBeta: 0.001; warmupTolerance: 5; missTolerance: 5;"
+        renderer="logarithmicDepthBuffer: true; colorManagement: true; physicallyCorrectLights: true; alpha: true;"
+        vr-mode-ui="enabled: false"
+        loading-screen="enabled: false">
+
+        <a-assets>
+            <a-asset-item id="flamingoAsset" src="AR.js-master/three.js/examples/resources/Flamingo.glb"></a-asset-item>
+        </a-assets>
+
+        <!-- Éclairage optimisé -->
+        <a-light type="ambient" color="#ffffff" intensity="1.2"></a-light>
+        <a-light type="directional" position="5 10 5" color="#ffffff" intensity="2"></a-light>
+        <a-light type="point" position="0 3 2" color="#ffffff" intensity="1.5"></a-light>
+
+        <!-- Caméra -->
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+        <!-- TARGET FLEUR -->
+        <a-entity mindar-image-target="targetIndex: 0">
+            
+            <!-- MODÈLE 3D PRINCIPAL - FLAMINGO -->
+            <a-gltf-model
+                id="mainModel"
+                src="#flamingoAsset"
+                position="0 0 0"
+                rotation="-90 0 0"
+                scale="0.05 0.05 0.05"
+                animation="property: rotation; to: -90 360 0; loop: true; dur: 8000; easing: linear;">
+            </a-gltf-model>
+            
+            <!-- Objets visuels simples -->
+            <a-box 
+                position="0.5 0.2 0" 
+                scale="0.2 0.2 0.2" 
+                color="#FF6B6B"
+                animation="property: rotation; to: 360 360 360; loop: true; dur: 3000;">
+            </a-box>
+            
+            <a-sphere 
+                position="-0.5 0.3 0" 
+                radius="0.15" 
+                color="#4ECDC4"
+                animation="property: position; to: -0.5 0.6 0; dir: alternate; dur: 2000; loop: true;">
+            </a-sphere>
+            
+            <a-cylinder 
+                position="0 0.4 -0.5" 
+                radius="0.1" 
+                height="0.4" 
+                color="#45B7D1"
+                animation="property: scale; to: 1 1.5 1; dir: alternate; dur: 1500; loop: true;">
+            </a-cylinder>
+            
+            <!-- Texte informatif -->
+            <a-text 
+                value="🌸 FLEURS DÉTECTÉES!" 
+                position="0 0.8 0" 
+                align="center" 
+                color="#FFD93D"
+                scale="0.8 0.8 0.8"
+                animation="property: rotation; to: 0 10 0; dir: alternate; dur: 2000; loop: true;">
+            </a-text>
+            
+        </a-entity>
+        
+    </a-scene>
+
+    <script>
+        console.log('🧠 MindAR Image Tracking Demo - Version Simplifiée');
+        console.log('📁 Modèle: AR.js-master/three.js/examples/resources/Flamingo.glb');
+        console.log('🎯 Target: assets/targets.mind');
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // Attendre que MindAR soit prêt
+            setTimeout(() => {
+                const target = document.querySelector('[mindar-image-target]');
+                const info = document.querySelector('#info');
+                const targetGuide = document.querySelector('#target-guide');
+                
+                console.log('Target trouvé:', target);
+                console.log('Guide visuel:', targetGuide);
+                
+                if (target) {
+                    // Événement de détection
+                    target.addEventListener('targetFound', function() {
+                        console.log('🌻 FLEURS DÉTECTÉES - Flamingo 3D visible !');
+                        
+                        // Masquer le guide visuel
+                        if (targetGuide) {
+                            targetGuide.classList.add('hidden');
+                        }
+                        
+                        info.innerHTML = '🌸 <strong>IMAGE DÉTECTÉE!</strong><br><small>Flamingo 3D + objets actifs</small>';
+                        info.style.background = 'rgba(76, 175, 80, 0.9)';
+                        
+                        // Vibration
+                        if (navigator.vibrate) {
+                            navigator.vibrate([200, 100, 200]);
+                        }
+                        
+                        // Son de succès
+                        try {
+                            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                            const oscillator = audioContext.createOscillator();
+                            const gainNode = audioContext.createGain();
+                            
+                            oscillator.connect(gainNode);
+                            gainNode.connect(audioContext.destination);
+                            
+                            oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime);
+                            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                            
+                            oscillator.start(audioContext.currentTime);
+                            oscillator.stop(audioContext.currentTime + 0.5);
+                        } catch(e) {
+                            console.log('Audio non supporté');
+                        }
+                    });
+                    
+                    // Événement de perte
+                    target.addEventListener('targetLost', function() {
+                        console.log('❌ Fleurs perdues');
+                        
+                        // Réafficher le guide visuel
+                        if (targetGuide) {
+                            targetGuide.classList.remove('hidden');
+                        }
+                        
+                        info.innerHTML = '🌻 Pointez vers l\'image de fleur jaune<br><a href="assets/quatre-sortes-fleurs-jaunes_1308-2129.jpg" target="_blank" style="color: #4CAF50;">📄 Voir l\'image cible</a>';
+                        info.style.background = 'rgba(0,0,0,0.9)';
+                    });
+                    
+                    console.log('✅ Événements MindAR configurés');
+                }
+                
+                // Afficher le guide visuel au démarrage
+                setTimeout(() => {
+                    if (targetGuide) {
+                        console.log('📷 Guide visuel activé - Caméra inversée');
+                    }
+                }, 1000);
+                
+            }, 2000);
+        });
+        
+        // Gestion des erreurs
+        window.addEventListener('error', function(e) {
+            console.error('Erreur MindAR:', e);
+            const info = document.querySelector('#info');
+            if (info) {
+                info.innerHTML = `❌ Erreur: ${e.message}<br><small>Vérifiez la console</small>`;
+                info.style.background = 'rgba(255, 0, 0, 0.8)';
+            }
+        });
+        
+        console.log('🎮 MindAR Ready - Caméra Inversée + Guide Visuel');
+    </script>
+</body>
+</html> 
